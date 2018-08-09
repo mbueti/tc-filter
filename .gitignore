@@ -1,3 +1,5 @@
 filter-new
 input
 *.log
+fort.*
+*.nc
