@@ -13,4 +13,4 @@ $(target): $(object)
 	$(FC) $(OPTIONS) $(LDFLAGS) $(CPPFLAGS) $(LOADLIBES) -o $@ $^
 
 clean:
-	rm -f $(object)
+	rm -f $(target)
