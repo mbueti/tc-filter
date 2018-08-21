@@ -3,3 +3,4 @@ input
 *.log
 fort.*
 *.nc
+syndat_tcvitals.*

@@ -1,14 +1,25 @@
       PROGRAM FILTER
       USE netcdf
+      USE datetime_module, ONLY: datetime, timedelta
 
       INTEGER :: UNCID, VNCID, STATUS, UVARID, VVARID, 
-     *           LATVARID, LONVARID, NLON, NLAT, NTIME,
-     *           IMX, JMX 
+     *           LATVARID, LONVARID, TIMEVARID,
+     *           NLON, NLAT, NTIME, IMX, JMX, TRACKREAD,
+     *           TCDATE, TCHOUR, STORMDAYS, STORMHOUR, STORMMIN
+      REAL :: TCLAT, TCLON
       INTEGER, DIMENSION(NF90_MAX_VAR_DIMS) :: dimIDs
       REAL, DIMENSION(:, :), ALLOCATABLE :: U, V
-      REAL, DIMENSION(:), ALLOCATABLE :: LAT, LON
-      CHARACTER(len=22) :: UFILENAME, VFILENAME
+      REAL, DIMENSION(:), ALLOCATABLE :: LAT, LON, TIME
+      CHARACTER(len=22) :: UFILENAME, VFILENAME, TRACKFILENAME
       CHARACTER(len=7) :: UFIELDNAME, VFIELDNAME
+      CHARACTER(len=10) :: TCNAME
+      CHARACTER(len=4) :: TCORG, STORMTIME, TIMESTRING
+      CHARACTER(len=3) :: TCID, STORMID
+      CHARACTER(len=8) :: STORMDATE, DATESTRING
+      CHARACTER(len=1) :: TCNS, TCEW
+
+      TYPE(datetime) :: BASETIME
+      TYPE(timedelta) :: DTIME
 
       PARAMETER (IMX=640 , JMX=320, nmx=24)
       PARAMETER (KMAX=18,LGI=20 ,iimx=110)
@@ -43,6 +54,10 @@ C
        CALL GETARG(2, UFIELDNAME)
        CALL GETARG(3, VFILENAME)
        CALL GETARG(4, VFIELDNAME)
+       CALL GETARG(5, TRACKFILENAME)
+       CALL GETARG(6, STORMID)
+       CALL GETARG(7, STORMDATE)
+       CALL GETARG(8, STORMTIME)
 
        STATUS = NF90_OPEN(UFILENAME, NF90_WRITE, UNCID)
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
@@ -61,6 +76,7 @@ C
        ALLOCATE(V(NLON, NLAT))
        ALLOCATE(LON(NLON))
        ALLOCATE(LAT(NLAT))
+       ALLOCATE(TIME(NTIME))
 
        STATUS = NF90_INQ_VARID(UNCID, UFIELDNAME, UVARID)
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
@@ -76,13 +92,33 @@ C
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
        STATUS = NF90_GET_VAR(UNCID, LONVARID, LON)
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
+       STATUS = NF90_INQ_VARID(UNCID, "time", TIMEVARID)
+       if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
+       STATUS = NF90_GET_VAR(UNCID, TIMEVARID, TIME)
+
+       BASETIME = datetime(1900, 1, 1, 0, 0, 0)
+       STORMDAYS = FLOOR(TIME(2414))
+       STORMHOUR = FLOOR(12 * (TIME(2414) - STORMDAYS))
+       STORMMIN = FLOOR(60 * (12 * (TIME(2414) - STORMDAYS)
+     *                  - STORMHOUR))
+
+
+       PRINT *, 'TIME=', TIME(2414)
+       PRINT *, 'days=', STORMDAYS
+       PRINT *, 'hours=', STORMHOUR
+       PRINT *, 'mins=', STORMMIN
+       DTIME = timedelta(STORMDAYS, STORMHOUR,
+     *                   STORMMIN, 0, 0)
+       BASETIME = BASETIME + DTIME
+       PRINT *, BASETIME % isoformat()
+
 
        STATUS = NF90_open(VFILENAME, NF90_WRITE, VNCID)
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
        STATUS = NF90_INQ_VARID(VNCID, VFIELDNAME, VVARID)
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
        STATUS = NF90_GET_VAR(VNCID, VVARID, V,
-     *                       START = (/ 1, 1, 1 /),
+     *                       START = (/ 1, 1, 2414 /),
      *                       COUNT = (/ NLON, NLAT, 1 /))
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
 
@@ -139,8 +175,46 @@ C
 C      DEFINE THE CENTER OF THE STORM:   XV,YV 
 C                                      (LON,LAT)
 C
-       XV = -73.1
-       YV =  32.1
+17    FORMAT(A4,A4,A10,I9,1x,I4,1x,F3.0,A1,1x,F4.0,A1,1x,I3,1x,I3,3I5,
+     *       1x,i2,1x,I3,1x,I4,1x,I4,1x,I4,1x,I4,1x,I4,
+     *       1x,I4,1x,I4,1x,I4)
+      OPEN(TRACKREAD, file=TRACKFILENAME, status='old')
+C     read(TRACKREAD, 17) TCNAME, TCDATE, TCHOUR, lat, lns, long, lew, garb, mx, rmw, Rd1, Rd2
+      DO WHILE (TCID.NE.STORMID
+     *          .OR.TIMESTRING.NE.STORMTIME
+     *          .OR.DATESTRING.NE.STORMDATE)
+        READ(TRACKREAD, 17) TCORG, TCID, TCNAME, TCDATE, TCHOUR,
+     *                      TCLAT, TCNS, TCLON, TCEW
+        WRITE(TIMESTRING, '(i4)') TCHOUR
+        WRITE(DATESTRING, '(i8)') TCDATE
+      END DO
+      print *, 'TCNAME=', TCNAME
+      print *, 'TCID=', TCID
+      print *, 'TCDATE=', TCDATE
+      print *, 'TCHOUR=', TCHOUR
+      print *, 'STORMDATE=', STORMDATE
+      print *, 'STORMTIME=', STORMTIME
+      print *, 'TIMESTRING=', TIMESTRING
+      print *, 'DATESTRING=', DATESTRING
+      print *, 'STORMID=', STORMID
+      print *, 'TCLON=', TCLON
+      print *, 'TCLAT=', TCLAT
+      IF (TCEW.EQ.'W') THEN
+        XV = -1 * TCLON / 10.0
+      ELSE
+        XV = TCLON / 10.0
+      ENDIF
+
+      IF (TCNS.EQ.'S') THEN
+        YV = -1 * TCLAT / 10.0
+      ELSE
+        YV = TCLAT / 10.0
+      ENDIF
+
+      PRINT *, 'XV=', XV
+      PRINT *, 'YV=', YV
+      XV = -73.1
+      YV =  32.1
 C
       IF (XV.LT.0) THEN
         XV = 360. + XV
@@ -419,7 +493,9 @@ C
 C
 C      DO THE OPTIMUM INTERPOLATION......>>>>>
 C
+      print *, 'entering rodist'
       call rodist
+      print *, 'exiting rodist'
 C
 C
 C     CREATE MATRIX  [A]  CONTAINING THE DISTANCE-RELATED CORRELATIONS
@@ -891,7 +967,9 @@ C  SUBROUTINE BOUND COMPUTES FIELD VALUES OF ARRAY XR USING
 C         BILINEAR INTERPOLATION
 C
 c 
+        Print*, 'calling BOUND from SEPAR '
         CALL BOUND(NMX,XR,rovect)
+        print*,'here is rovect ',rovect
 C
 c  xrop(nmx) are the interpolated values of the disturbance
 c   field at the rovect pts
@@ -999,7 +1077,7 @@ CC     PARAMETER  (IMX=75, JMX=75)
        COMMON  /GDINF/  NGD,NGR,NTR,DT,JS,JN,IE,IW,IIMAX,IMAX,JJMAX,
      *                  JMAX,NSTFLG,ICX,ICY,IHX,IHY,DFTX,DFTY
 CC
-       COMMON /VAR/  DIST
+      COMMON /VAR/  DIST,NN1,NN2,NN3,NN4,IFL
        COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),
      *  DEL(IMX,JMX),THA(IMX,JMX),TANP(IMX,JMX),DS(IMX,JMX)
        COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,IX,IY
@@ -1115,7 +1193,7 @@ C
        COMMON  /TOTAL/ DDEL,dtha
        COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,IX,IY
        COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),
-     *  DEL(IMX,JMX),THA(IMX,JMX)
+     *      DEL(IMX,JMX),THA(IMX,JMX),XF(IMX,JMX),DS(IMX,JMX)
 c
         common /scale/rmxavg,rfind
 c
