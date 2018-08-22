@@ -5,8 +5,10 @@
       INTEGER :: UNCID, VNCID, STATUS, UVARID, VVARID, 
      *           LATVARID, LONVARID, TIMEVARID,
      *           NLON, NLAT, NTIME, IMX, JMX, TRACKREAD,
-     *           TCDATE, TCHOUR, STORMDAYS, STORMHOUR, STORMMIN
-      REAL :: TCLAT, TCLON
+     *           TCDATE, TCHOUR, STORMDAYS, STORMHOUR, STORMMIN,
+     *           TRACKYEAR, TRACKMONTH, TRACKDAY, TRACKHOUR,
+     *           TRACKMIN, I
+      REAL, DIMENSION(2) :: TCLAT, TCLON
       INTEGER, DIMENSION(NF90_MAX_VAR_DIMS) :: dimIDs
       REAL, DIMENSION(:, :), ALLOCATABLE :: U, V
       REAL, DIMENSION(:), ALLOCATABLE :: LAT, LON, TIME
@@ -16,10 +18,10 @@
       CHARACTER(len=4) :: TCORG, STORMTIME, TIMESTRING
       CHARACTER(len=3) :: TCID, STORMID
       CHARACTER(len=8) :: STORMDATE, DATESTRING
-      CHARACTER(len=1) :: TCNS, TCEW
+      CHARACTER(len=1), DIMENSION(2) :: TCNS, TCEW
 
-      TYPE(datetime) :: BASETIME
-      TYPE(timedelta) :: DTIME
+      TYPE(datetime) :: BASETIME, TCTIME, TRACKTIME
+      TYPE(timedelta) :: DTIME, SIXHOURS
 
       PARAMETER (IMX=640 , JMX=320, nmx=24)
       PARAMETER (KMAX=18,LGI=20 ,iimx=110)
@@ -59,6 +61,8 @@ C
        CALL GETARG(7, STORMDATE)
        CALL GETARG(8, STORMTIME)
 
+       BASETIME = datetime(1900, 1, 1, 0, 0, 0)
+
        STATUS = NF90_OPEN(UFILENAME, NF90_WRITE, UNCID)
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
        STATUS = NF90_INQ_VARID(UNCID, UFIELDNAME, UVARID)
@@ -96,21 +100,14 @@ C
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
        STATUS = NF90_GET_VAR(UNCID, TIMEVARID, TIME)
 
-       BASETIME = datetime(1900, 1, 1, 0, 0, 0)
        STORMDAYS = FLOOR(TIME(2414))
        STORMHOUR = FLOOR(12 * (TIME(2414) - STORMDAYS))
        STORMMIN = FLOOR(60 * (12 * (TIME(2414) - STORMDAYS)
      *                  - STORMHOUR))
 
-
-       PRINT *, 'TIME=', TIME(2414)
-       PRINT *, 'days=', STORMDAYS
-       PRINT *, 'hours=', STORMHOUR
-       PRINT *, 'mins=', STORMMIN
        DTIME = timedelta(STORMDAYS, STORMHOUR,
      *                   STORMMIN, 0, 0)
-       BASETIME = BASETIME + DTIME
-       PRINT *, BASETIME % isoformat()
+       TCTIME = BASETIME + DTIME
 
 
        STATUS = NF90_open(VFILENAME, NF90_WRITE, VNCID)
@@ -175,46 +172,57 @@ C
 C      DEFINE THE CENTER OF THE STORM:   XV,YV 
 C                                      (LON,LAT)
 C
-17    FORMAT(A4,A4,A10,I9,1x,I4,1x,F3.0,A1,1x,F4.0,A1,1x,I3,1x,I3,3I5,
+17    FORMAT(A4,A4,A10,1x,I4,I2,I2,1x,I2,I2,1x,F3.0,A1,1x,
+     *       F4.0,A1,1x,I3,1x,I3,3I5,
      *       1x,i2,1x,I3,1x,I4,1x,I4,1x,I4,1x,I4,1x,I4,
      *       1x,I4,1x,I4,1x,I4)
       OPEN(TRACKREAD, file=TRACKFILENAME, status='old')
-C     read(TRACKREAD, 17) TCNAME, TCDATE, TCHOUR, lat, lns, long, lew, garb, mx, rmw, Rd1, Rd2
-      DO WHILE (TCID.NE.STORMID
-     *          .OR.TIMESTRING.NE.STORMTIME
-     *          .OR.DATESTRING.NE.STORMDATE)
-        READ(TRACKREAD, 17) TCORG, TCID, TCNAME, TCDATE, TCHOUR,
-     *                      TCLAT, TCNS, TCLON, TCEW
-        WRITE(TIMESTRING, '(i4)') TCHOUR
-        WRITE(DATESTRING, '(i8)') TCDATE
-      END DO
-      print *, 'TCNAME=', TCNAME
-      print *, 'TCID=', TCID
-      print *, 'TCDATE=', TCDATE
-      print *, 'TCHOUR=', TCHOUR
-      print *, 'STORMDATE=', STORMDATE
-      print *, 'STORMTIME=', STORMTIME
-      print *, 'TIMESTRING=', TIMESTRING
-      print *, 'DATESTRING=', DATESTRING
-      print *, 'STORMID=', STORMID
-      print *, 'TCLON=', TCLON
-      print *, 'TCLAT=', TCLAT
-      IF (TCEW.EQ.'W') THEN
-        XV = -1 * TCLON / 10.0
-      ELSE
-        XV = TCLON / 10.0
-      ENDIF
 
-      IF (TCNS.EQ.'S') THEN
-        YV = -1 * TCLAT / 10.0
-      ELSE
-        YV = TCLAT / 10.0
-      ENDIF
+      DO WHILE (TCID.NE.STORMID.OR.TRACKTIME.LE.TCTIME)
+        IF (TCID.EQ.STORMID) THEN
+          TCLAT(1) = TCLAT(2)
+          TCLON(1) = TCLON(2)
+          TCNS(1) = TCNS(2)
+          TCEW(1) = TCEW(2)
+        END IF
+
+        READ(TRACKREAD, 17) TCORG, TCID, TCNAME, TRACKYEAR,
+     *                      TRACKMONTH, TRACKDAY, TRACKHOUR, TRACKMIN,
+     *                      TCLAT(2), TCNS(2), TCLON(2), TCEW(2)
+        TRACKTIME = datetime(TRACKYEAR, TRACKMONTH,
+     *                       TRACKDAY, TRACKHOUR, TRACKMIN, 0)
+      END DO
+
+      DO I=1, 2
+        IF (TCEW(I).EQ.'W') THEN
+          TCLON(I) = -1 * TCLON(I) / 10.0
+        ELSE
+          TCLON(I) = TCLON(I) / 10.0
+        END IF
+   
+        IF (TCNS(I).EQ.'S') THEN
+          TCLAT(I) = -1 * TCLAT(I) / 10.0
+        ELSE
+          TCLAT(I) = TCLAT(I) / 10.0
+        END IF
+      END DO
+
+      SIXHOURS = timedelta(0, 6, 0, 0, 0)
+      DTIME = TRACKTIME - TCTIME
+      DTIME = SIXHOURS - DTIME
+
+      XV = TCLON(1) * (1 - (DTIME % total_seconds())
+     *                   / (SIXHOURS % total_seconds())) +
+     *     TCLON(2) * (DTIME % total_seconds())
+     *              / (SIXHOURS % total_seconds())
+
+      YV = TCLAT(1) * (1 - (DTIME % total_seconds())
+     *                   / (SIXHOURS % total_seconds())) +
+     *     TCLAT(2) * (DTIME % total_seconds())
+     *              / (SIXHOURS % total_seconds())
 
       PRINT *, 'XV=', XV
       PRINT *, 'YV=', YV
-      XV = -73.1
-      YV =  32.1
 C
       IF (XV.LT.0) THEN
         XV = 360. + XV
