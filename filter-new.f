@@ -7,7 +7,7 @@
      *           NLON, NLAT, NTIME, IMX, JMX, TRACKREAD,
      *           TCDATE, TCHOUR, STORMDAYS, STORMHOUR, STORMMIN,
      *           TRACKYEAR, TRACKMONTH, TRACKDAY, TRACKHOUR,
-     *           TRACKMIN, I, T
+     *           TRACKMIN, I, ITC, T, NTC
       LOGICAL :: END
       REAL, DIMENSION(2) :: TCLAT, TCLON
       INTEGER, DIMENSION(NF90_MAX_VAR_DIMS) :: dimIDs
@@ -20,6 +20,7 @@
       CHARACTER(len=3) :: TCID, STORMID
       CHARACTER(len=8) :: DATESTRING
       CHARACTER(len=1), DIMENSION(2) :: TCNS, TCEW
+      CHARACTER(len=3), DIMENSION(200) :: TCIDS
 
       TYPE(datetime), DIMENSION(2) :: TRACKTIME
       TYPE(datetime) :: BASETIME, TCTIME
@@ -60,7 +61,6 @@ C
        CALL GETARG(3, VFILENAME)
        CALL GETARG(4, VFIELDNAME)
        CALL GETARG(5, TRACKFILENAME)
-       CALL GETARG(6, STORMID)
 
        BASETIME = datetime(1900, 1, 1, 0, 0, 0)
        SIXHOURS = timedelta(0, 6, 0, 0, 0)
@@ -84,6 +84,33 @@ C
        ALLOCATE(LAT(NLAT))
        ALLOCATE(TIME(NTIME))
 
+17     FORMAT(A4,A4,A10,1x,I4,I2,I2,1x,I2,I2,1x,F3.0,A1,1x,
+     *        F4.0,A1,1x,I3,1x,I3,3I5,
+     *        1x,i2,1x,I3,1x,I4,1x,I4,1x,I4,1x,I4,1x,I4,
+     *        1x,I4,1x,I4,1x,I4)
+      OPEN(TRACKREAD, file=TRACKFILENAME, status='old')
+      END = .FALSE.
+      NTCID = 0
+      DO WHILE (.NOT.END)
+        END = .TRUE.
+        READ(TRACKREAD, 17, END=13) TCORG, TCID
+        IF (NTCID.EQ.0) THEN
+          GO TO 11
+        END IF
+        DO I=1, NTCID 
+          IF (TCIDS(I).EQ.TCID) THEN
+            GO TO 12
+          END IF
+        END DO
+11      TCIDS(NTCID + 1) = TCID
+        NTCID = NTCID + 1
+12      END = .FALSE.
+13      CONTINUE
+      END DO
+      CLOSE(TRACKREAD)
+
+      DO ITC=1, NTCID
+      STORMID = TCIDS(ITC)
        DO T=1, NTIME
          STATUS = NF90_INQ_VARID(UNCID, UFIELDNAME, UVARID)
          if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
@@ -175,10 +202,6 @@ C
 C      DEFINE THE CENTER OF THE STORM:   XV,YV 
 C                                      (LON,LAT)
 C
-17      FORMAT(A4,A4,A10,1x,I4,I2,I2,1x,I2,I2,1x,F3.0,A1,1x,
-     *       F4.0,A1,1x,I3,1x,I3,3I5,
-     *       1x,i2,1x,I3,1x,I4,1x,I4,1x,I4,1x,I4,1x,I4,
-     *       1x,I4,1x,I4,1x,I4)
         OPEN(TRACKREAD, file=TRACKFILENAME, status='old')
 
         TRACKTIME(1) = BASETIME
@@ -589,11 +612,11 @@ C
      *                      COUNT = (/ NLON, NLAT, 1 /))
         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
         END DO
+        END DO
         STATUS = NF90_CLOSE(UNCID)
         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
         STATUS = NF90_CLOSE(VNCID)
         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
-        print *, 'EXITING'
         STOP 
       END
 
