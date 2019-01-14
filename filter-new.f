@@ -1,4 +1,4 @@
-      PROGRAM FILTER
+     PROGRAM FILTER
       USE netcdf
       USE datetime_module, ONLY: datetime, timedelta
 
@@ -109,9 +109,11 @@ C
       END DO
       CLOSE(TRACKREAD)
 
-      DO ITC=1, NTCID
-      STORMID = TCIDS(ITC)
-       DO T=1, NTIME
+C     DO ITC=1, NTCID
+c     STORMID = TCIDS(ITC)
+      STORMID = '18L'
+C      DO T=1, NTIME
+       T = 2381
          STATUS = NF90_INQ_VARID(UNCID, UFIELDNAME, UVARID)
          if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
          STATUS = NF90_GET_VAR(UNCID, UVARID, U,
@@ -236,12 +238,12 @@ C
         DTIMES(1) = TCTIME - TRACKTIME(1)
         DTIMES(2) = TRACKTIME(2) - TCTIME
    
-        IF (TCID.NE.STORMID.OR.
-     *      TRACKTIME(1).GT.TCTIME.OR.
-     *      TRACKTIME(2).LT.TCTIME
-     *  ) THEN
-           CYCLE
-        END IF
+c       IF (TCID.NE.STORMID.OR.
+c    *      TRACKTIME(1).GT.TCTIME.OR.
+c    *      TRACKTIME(2).LT.TCTIME
+c    *  ) THEN
+c          CYCLE
+c       END IF
 
         PRINT *, TCID
         PRINT *, STORMID
@@ -306,7 +308,7 @@ CC
 CC
 CC    FILTER IS DEFINED IN MWR PAPER OF KURIHARA, ET.ALL, 1990:
 CC
-         IFL = 3
+         IFL = 2
 CC
 CC
 CC**********************************************************
@@ -611,8 +613,8 @@ C
      *                      START = (/ 1, 1, T /),
      *                      COUNT = (/ NLON, NLAT, 1 /))
         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
-        END DO
-        END DO
+c       END DO
+c       END DO
         STATUS = NF90_CLOSE(UNCID)
         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS)
         STATUS = NF90_CLOSE(VNCID)
@@ -1298,8 +1300,9 @@ c
            tprof(i-ist+1,j-jst+1,ir)=tanp
 52         continue
 51      continue
-c        print 333,((tprof(i,1,k),i=4,7),(tprof(i,2,k),i=4,7),
-c    1    (tprof(i,3,k),i=4,7),(tprof(i,4,k),i=4,7),k=1,lgth)
+        print *, 'let us see the value of tprof'
+        print 333,((tprof(i,1,k),i=4,7),(tprof(i,2,k),i=4,7),
+     *    (tprof(i,3,k),i=4,7),(tprof(i,4,k),i=4,7),k=1,lgth)
 333      format(16f7.1)
 c
 c  find the first relative maximum along each azimuthal direction
@@ -1328,9 +1331,12 @@ cc
          hmax=amax1(hmax,tmax(i,j))
         if(hmax.eq.tmax(i,j)) ipos=itpos(i,j)
 53       continue    
+        print *, 'hmax, rmxpos, 5x rmxpos are'
         print*,hmax,rmxpos,rmxpos/0.2
-c       print *,((tmax(i,j),i=1,npts),j=1,npts)
-c       print *,((itpos(i,j),i=1,npts),j=1,npts)
+        print *, 'tmax is'
+        print *,((tmax(i,j),i=1,npts),j=1,npts)
+        print *, 'itpos is'
+        print *,((itpos(i,j),i=1,npts),j=1,npts)
 c
 c
 c
