@@ -1,6 +1,6 @@
       PROGRAM FILTER
-      USE datetime_module, ONLY: datetime, timedelta
       USE netcdf
+      USE datetime_module, ONLY: datetime, timedelta
 
       INTEGER :: UNCID, VNCID, STATUS, UVARID, VVARID, 
      *           LATVARID, LONVARID, TIMEVARID,
@@ -13,7 +13,7 @@
       INTEGER, DIMENSION(NF90_MAX_VAR_DIMS) :: dimIDs
       REAL, DIMENSION(:, :), ALLOCATABLE :: U, V
       REAL, DIMENSION(:), ALLOCATABLE :: LAT, LON, TIME
-      CHARACTER(len=200) :: UFILENAME, VFILENAME, TRACKFILENAME
+      CHARACTER(len=22) :: UFILENAME, VFILENAME, TRACKFILENAME
       CHARACTER(len=7) :: UFIELDNAME, VFIELDNAME
       CHARACTER(len=10) :: TCNAME
       CHARACTER(len=4) :: TCORG, TIMESTRING
@@ -47,7 +47,7 @@ C
       REAL, DIMENSION(IMX) :: FACG1,FACG2,FACT1,FACT2
       REAL, DIMENSION(IBLKMX) :: FILC
       REAL, DIMENSION(JBLKMX) :: DIAG
-      REAL, DIMENSION(IMX,JMX) :: XXD,YYD,US,VS,UALL,VALL,UP,VP,
+      REAL, DIMENSION(IMX,JMX) :: XXD,US,VS,UALL,VALL,UP,VP,
      *                            UFILS,VFILS,UFIL,VFIL,UFILP,VFILP
 C 
        CHARACTER*4 IBLOCK
@@ -64,7 +64,9 @@ C
 
        BASETIME = datetime(1900, 1, 1, 0, 0, 0)
        SIXHOURS = timedelta(0, 6, 0, 0, 0)
-       STATUS = NF90_OPEN(path=UFILENAME, mode=NF90_WRITE, ncid=UNCID)
+
+       PRINT *, "FILENAME=", UFILENAME
+       STATUS = NF90_OPEN(UFILENAME, NF90_WRITE, UNCID)
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 69)
        STATUS = NF90_INQ_VARID(UNCID, UFIELDNAME, UVARID)
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 71)
@@ -83,15 +85,10 @@ C
        ALLOCATE(LAT(NLAT))
        ALLOCATE(TIME(NTIME))
 
-17    FORMAT(A4, 1x, A3, 1x, A10, I2, I2, I2, 1x, I2, I2,
-     *       1x, F3.0, A1, 1x, F4.0, A1, 1x, I3, 1x I3, 1x, I4,
-     *       1x, I4, 1x, I4, 1x, I2, 1x, I3, 1x, I4, 1x, I4,
-     *       1x, I4, 1x, I7, 1x, I4, 1x, I4, 1x, I4)
-       
-! 17     FORMAT(A4,A4,A10,1x,I4,I2,I2,1x,I2,I2,1x,F3.0,A1,1x,
-!      *        F4.0,A1,1x,I3,1x,I3,3I5,
-!      *        1x,i2,1x,I3,1x,I4,1x,I4,1x,I4,1x,I4,1x,I4,
-!      *        1x,I4,1x,I4,1x,I4)
+17     FORMAT(A4,A4,A10,1x,I4,I2,I2,1x,I2,I2,1x,F3.0,A1,1x,
+     *        F4.0,A1,1x,I3,1x,I3,3I5,
+     *        1x,i2,1x,I3,1x,I4,1x,I4,1x,I4,1x,I4,1x,I4,
+     *        1x,I4,1x,I4,1x,I4)
       OPEN(TRACKREAD, file=TRACKFILENAME, status='old')
       END = .FALSE.
       NTCID = 0
@@ -113,28 +110,27 @@ C
       END DO
       CLOSE(TRACKREAD)
 
-
 C     DO ITC=1, NTCID
 c     STORMID = TCIDS(ITC)
-      STORMID = '08L'
-      DO T=1, NTIME
-      !  T = 2381
+      STORMID = '18L'
+C      DO T=1, NTIME
+       T = 2381
          STATUS = NF90_INQ_VARID(UNCID, UFIELDNAME, UVARID)
-         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 125)
+         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 118)
          STATUS = NF90_GET_VAR(UNCID, UVARID, U,
      *                       START = (/ 1, 1, T /),
      *                       COUNT = (/ NLON, NLAT, 1 /))
-         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 129)
-         STATUS = NF90_INQ_VARID(UNCID, "lat", LATVARID)
-         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 131)
+         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 122)
+         STATUS = NF90_INQ_VARID(UNCID, "latitude", LATVARID)
+         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 124)
          STATUS = NF90_GET_VAR(UNCID, LATVARID, LAT)
-         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 133)
-         STATUS = NF90_INQ_VARID(UNCID, "lon", LONVARID)
-         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 135)
+         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 126)
+         STATUS = NF90_INQ_VARID(UNCID, "longitude", LONVARID)
+         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 128)
          STATUS = NF90_GET_VAR(UNCID, LONVARID, LON)
-         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 137)
+         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 130)
          STATUS = NF90_INQ_VARID(UNCID, "time", TIMEVARID)
-         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 139)
+         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 132)
          STATUS = NF90_GET_VAR(UNCID, TIMEVARID, TIME)
 
          STORMDAYS = FLOOR(TIME(T))
@@ -148,13 +144,13 @@ c     STORMID = TCIDS(ITC)
 
 
          STATUS = NF90_open(VFILENAME, NF90_WRITE, VNCID)
-         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 153)
+         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 146)
          STATUS = NF90_INQ_VARID(VNCID, VFIELDNAME, VVARID)
-         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 155)
+         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 148)
          STATUS = NF90_GET_VAR(VNCID, VVARID, V,
      *                       START = (/ 1, 1, T /),
      *                       COUNT = (/ NLON, NLAT, 1 /))
-         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 159)
+         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 152)
 
 C      READ (10)NSTEP,NNEST,IBLOCK 
 C 
@@ -216,13 +212,12 @@ C
         TCID = ''
         END = .FALSE.
         DO WHILE (
-!      *    (STORMID.NE.TCID.OR.
-     *    ((TRACKTIME(2)).LT.TCTIME.OR.
+     *    (STORMID.NE.TCID.OR.
+     *    (TRACKTIME(2)).LT.TCTIME.OR.
      *    (TRACKTIME(1)).EQ.BASETIME).AND.
      *    .NOT.END
      *  ) 
           END = .TRUE.
-      !     print * , 'STORMID=',STORMID
           IF (TCID.EQ.STORMID) THEN
             TCLAT(1) = TCLAT(2)
             TCLON(1) = TCLON(2)
@@ -234,11 +229,6 @@ C
           READ(TRACKREAD, 17, END=16) TCORG, TCID, TCNAME, TRACKYEAR,
      *                      TRACKMONTH, TRACKDAY, TRACKHOUR, TRACKMIN,
      *                      TCLAT(2), TCNS(2), TCLON(2), TCEW(2)
-          if (TRACKYEAR < 50) then
-            TRACKYEAR = TRACKYEAR + 2000
-          else
-            TRACKYEAR = TRACKYEAR + 1900
-          end if
           TRACKTIME(2) = datetime(TRACKYEAR, TRACKMONTH,
      *                       TRACKDAY, TRACKHOUR, TRACKMIN, 0)
           END=.FALSE.
@@ -248,8 +238,6 @@ C
 
         DTIMES(1) = TCTIME - TRACKTIME(1)
         DTIMES(2) = TRACKTIME(2) - TCTIME
-        if ((DTIMES(1)%total_seconds()).lt.0
-     *  .or.(DTIMES(2)%total_seconds()).lt.0) cycle
    
 c       IF (TCID.NE.STORMID.OR.
 c    *      TRACKTIME(1).GT.TCTIME.OR.
@@ -258,13 +246,13 @@ c    *  ) THEN
 c          CYCLE
 c       END IF
 
-      !   PRINT *, TCID
-      !   PRINT *, STORMID
-      !   print *, TCLON
-      !   print *, TCLAT
-      !   print *, TCTIME % isoformat()
-      !   print *, TRACKTIME(1) % isoformat()
-      !   print *, TRACKTIME(2) % isoformat()
+        PRINT *, TCID
+        PRINT *, STORMID
+        print *, TCLON
+        print *, TCLAT
+        print *, TCTIME % isoformat()
+        print *, TRACKTIME(1) % isoformat()
+        print *, TRACKTIME(2) % isoformat()
 
         DO I=1, 2
           IF (TCEW(I).EQ.'W') THEN
@@ -498,7 +486,6 @@ C
         call calct(dr,dxc,dyc,ycp,tanp,rmxlim)
 C
 C          
-        print *, 'nmx=', nmx
         DO 10 iang=1, nmx
           X1 = 0.0
           RTAN1 = 100000.
@@ -532,7 +519,6 @@ c         WRITE(56,*)R,RTAN
           RTAN1 = RTAN -4.0
           IF(R.LT.10.8)GO TO 777
 999       CONTINUE 
-          print *, 999
 c         PRINT*
 c   
 C   
@@ -546,10 +532,9 @@ c         RZR = R
           rzr=dist
 1999      CONTINUE
           RZR = RZR + DR
-          CALL CALCRa(RZR,RTAN,iang,dist)
-          irdex=min(floor(rzr/dr), 110)
+c         CALL CALCRa(RZR,RTAN,iang)
+          irdex=int(rzr/dr)
           rtan = rtani(irdex,iang)
-          print *, 'rtan=', rtan
           IF (RTAN.GT.0.0) GO TO 1999
 C   
           RZRN = RZR
@@ -582,7 +567,9 @@ C
 C
 C      DO THE OPTIMUM INTERPOLATION......>>>>>
 C
+        print *, 'entering rodist'
         call rodist
+        print *, 'exiting rodist'
 C
 C
 C     CREATE MATRIX  [A]  CONTAINING THE DISTANCE-RELATED CORRELATIONS
@@ -597,50 +584,44 @@ C     SEPERATE THE DISTURBANCE INTO THE HURRICNAE AND NON-HURRICNAE
 C     COMPONENTS
 C
 C
-!          DO 880 J = 1, JMX
-!            DO 880 I = 1, IMX
-!              XXD(I,J) = UFIL(I,J) - UFILS(I,J)
-! 880      CONTINUE
-         XXD = UFIL - UFILS
+         DO 880 J = 1, JMX
+           DO 880 I = 1, IMX
+             XXD(I,J) = UFIL(I,J) - UFILS(I,J)
+880      CONTINUE
          CALL SEPAR(XXD)
-         UFIL = UFILS + XXD
-!          DO 890 J = 1, JMX
-!            DO 890 I = 1, IMX
-!              UFIL(I,J)  =  UFILS(I,J) +  XXD(I,J)
-! 890      CONTINUE
-         YYD = VFIL - VFILS
-!          DO 980 J = 1 , JMX
-!            DO 980 I = 1 , IMX
-!              XXD(I,J) = VFIL(I,J) - VFILS(I,J)
-! 980      CONTINUE
-         CALL SEPAR(YYD)
-         VFIL = VFILS + YYD
-!          DO 990 J = 1 , JMX
-!            DO 990 I = 1 , IMX
-!              VFIL(I,J)  =  VFILS(I,J) +  XXD(I,J)
-! 990      CONTINUE
-      !    print *, 'XXD=', XXD
+         DO 890 J = 1, JMX
+           DO 890 I = 1, IMX
+             UFIL(I,J)  =  UFILS(I,J) +  XXD(I,J)
+890      CONTINUE
+         DO 980 J = 1 , JMX
+           DO 980 I = 1 , IMX
+             XXD(I,J) = VFIL(I,J) - VFILS(I,J)
+980      CONTINUE
+         CALL SEPAR(XXD)
+         DO 990 J = 1 , JMX
+           DO 990 I = 1 , IMX
+             VFIL(I,J)  =  VFILS(I,J) +  XXD(I,J)
+990      CONTINUE
 C
 C
 C      PUT THE ENVIRONMENTAL WINDS INTO THE GFDL HISTROY TAPE 
 C   
-        print *, 'T=', T
         STATUS = NF90_PUT_VAR(UNCID, UVARID, UFIL,
      *                      START = (/ 1, 1, T /),
      *                      COUNT = (/ NLON, NLAT, 1 /))
-        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 618)
+        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 611)
         STATUS = NF90_PUT_VAR(VNCID, VVARID, VFIL,
      *                      START = (/ 1, 1, T /),
      *                      COUNT = (/ NLON, NLAT, 1 /))
-        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 622)
-       END DO
+        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 615)
+c       END DO
 c       END DO
         STATUS = NF90_CLOSE(UNCID)
-        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 626)
+        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 619)
         STATUS = NF90_CLOSE(VNCID)
-        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 628)
-      !   STOP 'stopped'
-      END PROGRAM
+        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 621)
+        STOP 
+      END
 
       FUNCTION MAXMAG(A,LENGTH)
 CC
@@ -999,7 +980,7 @@ C  SEPERATES A FIELD INTO HURRICANE COMPONENT AND REMAINDER
 C
  
        PARAMETER( NMX=24,nmx1=nmx+1,nmx2=nmx*2,nmx6=nmx*6)
-       PARAMETER (IMX=640, JMX=320)
+       PARAMETER (IMX=640 , JMX=320)
        DIMENSION XR(NMX),XD(IMX,JMX)
 CC
        COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),
@@ -1107,24 +1088,13 @@ c
      1             +rovect(n1+1)
              IF(DR.GT.ro)GOTO11
              XRO=DELTH*FLOAT(NMX)/(2.*PI)*(XR(N2)-XR(N1+1)) +XR(N1+1)
-             print *, 'XRO=', XRO
 CC
 c Now add new code to compute distance from each gridpt. to rovect pts
 c
              do 12 ip=1,nmx
              dpij= (fact*(x-xvect(ip)))**2 +(y-yvect(ip))**2
-             print *, 'ip=', ip
-             print *, 'dpij=', dpij
-             print *, 'capd2=', capd2
-             print *, -dpij/capd2
-             if (dpij/capd2 > 100) then
-               b(ip) = 0
-             else
-               b(ip) = exp(-dpij/capd2)
-             endif
-             print *, 'b(ip)=', b(ip)
+             b(ip)=exp(-dpij/capd2)
 12           continue
-            print *, 'b=', b
 c
 c
              do 44 ip=1,nmx
@@ -1132,13 +1102,10 @@ c
 43               ab(ip,jp)=a(ip,jp)
                ab(ip,nmx1)=b(ip)
 44           continue
-             print *, 'ab=', ab
 c
 c  solve system using constrained least squares method
 c
-             print *, 'calling wnnls'
-             call wnnls(ab,nmx,0,nmx,nmx,0,[1.],w,rnm,md,
-     *                  iwrk,wrk,nmx6,nmx2)
+             call wnnls(ab,nmx,0,nmx,nmx,0,[1.],w,rnm,md,iwrk,wrk)
 c
              temp=0.
              do 20 ip=1,nmx
@@ -1148,7 +1115,6 @@ c            xh(ix,jy)=xf(ix,jy)-temp
              xd(ix,jy)=temp
 11     CONTINUE
 10     CONTINUE
-       print *, 'foo'
        RETURN
        END
         SUBROUTINE BOUND(NMX,XR,ro)
@@ -1207,16 +1173,10 @@ CCCCC      AFCT = 1.0E10
       PI180 = PI / 180.
       XCC = XV
       YCC = YV
-      print *, 'XCC=', XCC
-      print *, 'YCC=', YCC
-      print *, 'XCORN=', XCORN
-      print *, 'YCORN=', YCORN
       DX = PI180 * (XCC - XCORN) / DDEL
       DY = PI180 * (YCC - YCORN) / DTHA
-C      IX = IFIX(DX) + 1 
-C      IY = IFIX(DY) + 1
-      IX = IFIX(DX)
-      IY = IFIX(DY)
+      IX = IFIX(DX) + 1 
+      IY = IFIX(DY) + 1
       PRINT*
       PRINT*,'(I,J) OF CENTER:  ',IX,IY
       PRINT*
@@ -1352,7 +1312,7 @@ c
          hmax=0.
          do 53 i=1,npts
          do 53 j=1,npts
-          do 54 ir=2,lgth-1
+          do 54 ir=2,lgth
           if(tprof(i,j,ir).gt.tprof(i,j,ir-1).and.tprof(i,j,ir)
      1     .gt.tprof(i,j,ir+1))then
             tmax(i,j)=tprof(i,j,ir)
@@ -1413,7 +1373,7 @@ c
 334    continue
 c
          write(77,*)ixc,iyc
-        write(77,7700)((tw(i,j)/100.,i=ixc-3,ixc+3),j=iyc+3,iyc-3,-1)
+        write(77,7700)((tw(i,j)/100.,i=ixc-5,ixc+5),j=iyc+5,iyc-5,-1)
  7700   format(11f5.1)
 c
         iflag=0
@@ -1468,23 +1428,14 @@ c
         THETA= 2.*PI*FLOAT(iang-1)/FLOAT(NMX)
         X=RO/fact*COS(THETA)+XC
         Y=RO*SIN(THETA)+YC
-        IX=FLOOR(X/DX)
-        IY=FLOOR(Y/DY)
-        print *, 'X=',X
-        print *, 'Y=',Y
-        print *, 'DX=',DX
-        print *, 'DY=',DY
-        print *, 'XC=', XC
-        print *, 'YC=', YC
+        IX=INT(X/DX)
+        IY=INT(Y/DY)
         IX1=IX+1
         IY1=IY+1
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
-        print *, "IX=",IX
-        print *, "IY=",IY
-       rtan=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,MODULO(IY+1, IY))
-     1      +  (1.-Q)*P*XF(MODULO(IX+1, IX),IY) +
-     1      P*Q*XF(MODULO(IX+1,IX),MODULO(IY+1,IY))
+       rtan=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY+1)
+     1      +  (1.-Q)*P*XF(IX+1,IY) + P*Q*XF(IX+1,IY+1)
 10     CONTINUE
 c
 c
@@ -1591,8 +1542,7 @@ c
 100     format(5f8.4)
         return
         end
-      SUBROUTINE WNNLS(W,MDW,ME,MA,N,L,PRGOPT,X,RNORM,MODE,
-     *                 IWORK,WORK,nwrk,niwrk)
+      SUBROUTINE WNNLS(W,MDW,ME,MA,N,L,PRGOPT,X,RNORM,MODE,IWORK,WORK)
 C***BEGIN PROLOGUE  WNNLS
 C***DATE WRITTEN   790701   (YYMMDD)
 C***REVISION DATE  820801   (YYMMDD)
@@ -1888,10 +1838,8 @@ C     4. SLATEC COMMON MATH. LIBRARY ERROR HANDLING
 C        PACKAGE.  BY R. E. JONES.  AVAILABLE AS SANDIA
 C        TECHNICAL REPORT SAND78-1189.
 C
-      REAL              DUMMY, W(MDW,1), PRGOPT(1), X(1), RNORM
-      INTEGER nwrk, niwrk
-      INTEGER IWORK(niwrk)
-      REAL WORK(nwrk)
+      REAL              DUMMY, W(MDW,1), PRGOPT(1), X(1), WORK(1), RNORM
+      INTEGER IWORK(2)
 C
 C
 C***FIRST EXECUTABLE STATEMENT  WNNLS
@@ -2448,28 +2396,25 @@ C
 C     SUBROUTINE WNLSM (W,MDW,MME,MA,N,L,PRGOPT,X,RNORM,MODE,
 C    1                  IPIVOT,ITYPE,WD,H,SCALE,Z,TEMP,D)
 C++
-      REAL             W(MDW,N+1), X(N), WD(N), H(1), SCALE(MA+MME)
-      REAL     DOPE(4)
-      REAL             Z(1), TEMP(1), PRGOPT(1), D(N), SPARAM(5)
+      REAL             W(MDW,1), X(1), WD(1), H(1), SCALE(1), DOPE(4)
+      REAL             Z(1), TEMP(1), PRGOPT(1), D(1), SPARAM(5)
       REAL             ALAMDA, ALPHA, ALSQ, AMAX, BNORM, EANORM
       REAL             SRELPR, FAC, ONE, BLOWUP
       REAL             RNORM, SM, T, TAU, TWO, WMAX, ZERO, ZZ, Z2
       REAL             AMAX1, SQRT, SNRM2, SASUM
-      INTEGER IPIVOT(MA+MME), ITYPE(MA+MME), ISAMAX, IDOPE(8)
+      INTEGER IPIVOT(1), ITYPE(1), ISAMAX, IDOPE(8)
       LOGICAL HITCON, FEASBL, DONE, POS
       DATA ZERO /0.E0/, ONE /1.E0/, TWO /2.E0/, SRELPR /0.E0/
 C
 C     INITIALIZE-VARIABLES
 C***FIRST EXECUTABLE STATEMENT  WNLSM
-      IGO998 = 1
-      ! IGO998 = 10
+      IGO998 = 10
       GO TO 180
 C
 C     PERFORM INITIAL TRIANGULARIZATION IN THE SUBMATRIX
 C     CORRESPONDING TO THE UNCONSTRAINED VARIABLES USING
 C     THE PROCEDURE INITIALLY-TRIANGULARIZE.
-!    10 IGO995 = 20
-   10 IGO995 = 1
+   10 IGO995 = 20
       GO TO 280
 C
 C     PERFORM WNNLS ALGORITHM USING THE FOLLOWING STEPS.
@@ -2508,8 +2453,7 @@ C     ELSE PERFORM-MULTIPLIER-TEST-AND-DROP-A-CONSTRAINT
 C
    70 GO TO 20
 C
-   80 IGO980 = 1
-!    80 IGO980 = 90
+   80 IGO980 = 90
       GO TO 1000
 C
 C     COMPUTE-FINAL-SOLUTION
@@ -2599,8 +2543,7 @@ cross
   210 M = MA + MME
       ME = MME
       MEP1 = ME + 1
-      ! IGO977 = 220
-      IGO977 = 1
+      IGO977 = 220
       GO TO 100
 C
 C     PROCESS-OPTION-VECTOR
@@ -2693,8 +2636,7 @@ C     SOLVE THE TRIANGULAR SYSTEM OF CURRENTLY NON-ACTIVE
 C     VARIABLES AND STORE THE SOLUTION IN Z(*).
 C
 C     SOLVE-SYSTEM
-      IGO958 = 1
-      ! IGO958 = 310
+      IGO958 = 310
       GO TO 1110
 C
 C     INCREMENT ITERATION COUNTER AND CHECK AGAINST MAX. NUMBER
@@ -2710,8 +2652,6 @@ C     ACTIVE CONSTRAINTS ARE REMOVED FROM THE BASIS.
   320 ALPHA = TWO
       HITCON = .FALSE.
       IF (.NOT.(L.LT.NSOLN)) GO TO 360
-      ! print *, 'LP1=', LP1
-      ! print *, 'NSOLN=', NSOLN
       DO 350 J=LP1,NSOLN
         ZZ = Z(J)
         IF (.NOT.(ZZ.LE.ZERO)) GO TO 340
@@ -2991,8 +2931,7 @@ C     TO COMPUTE-FINAL-SOLUTION
 C
 C     SOLVE SYSTEM, STORE RESULTS IN X(*).
 C
-      IGO958 = 2
-      ! IGO958 = 1010
+      IGO958 = 1010
       GO TO 1110
 C     SOLVE-SYSTEM
  1010 CALL SCOPY(NSOLN, Z, 1, X, 1)
@@ -3098,7 +3037,7 @@ C***ROUTINES CALLED  (NONE)
 C***END PROLOGUE  XERABT
       CHARACTER*(*) MESSG
 C***FIRST EXECUTABLE STATEMENT  XERABT
-      ! STOP
+      STOP
       END
       SUBROUTINE XERCTL(MESSG1,NMESSG,NERR,LEVEL,KONTRL)
 C***BEGIN PROLOGUE  XERCTL
@@ -3231,25 +3170,25 @@ C
 C                            ****** CONSTRUCT THE TRANSFORMATION. ******
           DO 10 J=L1,M
    10     CL=AMAX1(ABS(U(1,J)),CL)
-      IF (CL.le.0) goto 130
+      IF (CL) 130,130,20
    20 CLINV=ONE/CL
       SM=(U(1,LPIVOT)*CLINV)**2
           DO 30 J=L1,M
    30     SM=SM+(U(1,J)*CLINV)**2
       CL=CL*SQRT(SM)
-      IF (U(1,LPIVOT).le.0) goto 50
+      IF (U(1,LPIVOT)) 50,50,40
    40 CL=-CL
    50 UP=U(1,LPIVOT)-CL
       U(1,LPIVOT)=CL
       GO TO 70
 C            ****** APPLY THE TRANSFORMATION  I+U*(U**T)/B  TO C. ******
 C
-   60 IF (CL.le.0) goto 130
+   60 IF (CL) 130,130,70
    70 IF (NCV.LE.0) RETURN
       B=UP*U(1,LPIVOT)
 C                       B  MUST BE NONPOSITIVE HERE.  IF B = 0., RETURN.
 C
-      IF (B.ge.0) goto 130
+      IF (B) 80,130,130
    80 B=ONE/B
       MML1P2=M-L1+2
       IF (MML1P2.GT.20) GO TO 140
@@ -3263,13 +3202,12 @@ C
               DO 90 I=L1,M
               SM=SM+C(I3)*U(1,I)
    90         I3=I3+ICE
-          IF (SM.eq.0) GOTO 120 
+          IF (SM) 100,120,100
   100     SM=SM*B
           C(I2)=C(I2)+SM*UP
               DO 110 I=L1,M
               C(I4)=C(I4)+SM*U(1,I)
-              I4=I4+ICE
-  110         CONTINUE
+  110         I4=I4+ICE
   120     CONTINUE
   130 RETURN
   140 CONTINUE
@@ -3465,7 +3403,6 @@ C     ELIMINATE ELEMENTS IN THE I-TH COL.
       W(J,I) = ZERO
       CALL SROTM(NP1-I, W(JM1,IP1), MDW, W(J,IP1), MDW, SPARAM)
   220 J = JM1
-      print *, 'at 220'
       GO TO 210
 C
 C     SET IC=I=COL BEING ELIMINATED
@@ -3763,7 +3700,7 @@ C                 SOFTWARE, VOL. 4, NO. 2, JUNE 1978, PP. 177-188.
 C***ROUTINES CALLED  (NONE)
 C***END PROLOGUE  I1MACH
 C
-      INTEGER*8 IMACH(16),OUTPUT
+      INTEGER IMACH(16),OUTPUT
       EQUIVALENCE (IMACH(4),OUTPUT)
 C
 C     MACHINE CONSTANTS FOR THE CRAY 1, XMP, 2, AND 3.
@@ -3877,18 +3814,8 @@ c
        irvgu = 3
        endif
 c
-       print*,'irend=',irend
-       print*,'iravg=',iravg
-       print*,'idst=',idst
        if(irend.eq.idst(i).or.iravg.eq.idst(i))then
          do 13 ir=irend,irvgu,-1
-            if(ir .lt. 2)then
-         print*,'bound index i,ir,irend,irvgu,idst ',
-     1 i,ir,irend,irvgu,idst(i)
-         print*,'xr ', xr(ir-1,i),xr(ir,i)
-         print*,'other var ',
-     1 iravg,rdistl,rmxavg,deltar,rmxlim,iravg
-         endif
             if(xr(ir-1,i).lt.0.)goto14
             if(xr(ir-1,i).gt.xr(ir,i).and.xr(ir-1,i).ge.xr(ir-2,i))then
                dist(i)=float(ir-1)*deltar
@@ -3930,7 +3857,7 @@ c
          END
        SUBROUTINE calcr(RO,RTAN,xc,yc,yold,u,v)
        PARAMETER ( nmx=24)
-       PARAMETER (IMX=640, JMX=320)
+       PARAMETER (IMX=640 , JMX=320)
        DIMENSION XR(NMX),u(imx,jmx),v(imx,jmx)
 C
        COMMON  /TOTAL/ DDEL,dtha
@@ -4070,9 +3997,8 @@ c
          RETURN
          END
       SUBROUTINE HANDLE_ERR(STATUS, LINE)
-        USE netcdf
         INTEGER, INTENT(IN) :: STATUS, LINE
-        PRINT *, "ERROR: EXITING WITH STATUS ", STATUS, " AT ", LINE
-        print *, NF90_STRERROR(status)
-      !   STOP STATUS
+
+        PRINT *, "ERROR: EXITING WITH STATUS ", STATUS, "AT LINE ", LINE
+        STOP STATUS
       END SUBROUTINE HANDLE_ERR
