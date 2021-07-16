@@ -7,7 +7,7 @@
      *           NLON, NLAT, NTIME, IMX, JMX, TRACKREAD,
      *           TCDATE, TCHOUR, STORMDAYS, STORMHOUR, STORMMIN,
      *           TRACKYEAR, TRACKMONTH, TRACKDAY, TRACKHOUR,
-     *           TRACKMIN, I, ITC, T, NTC
+     *           TRACKMIN, I, ITC, T, NTC, trackcount
       LOGICAL :: END
       REAL, DIMENSION(2) :: TCLAT, TCLON
       INTEGER, DIMENSION(NF90_MAX_VAR_DIMS) :: dimIDs
@@ -27,7 +27,7 @@
       TYPE(timedelta) :: DTIME, SIXHOURS
       TYPE(timedelta), DIMENSION(2) :: DTIMES
 
-      PARAMETER (IMX=640, JMX=320, nmx=24)
+      PARAMETER (IMX=640, JMX=320, nmx=64)
       PARAMETER (KMAX=18,LGI=20 ,iimx=110)
       PARAMETER (IBLKMX=LGI*IMX+4*KMAX*IMX)
       PARAMETER (JBLKMX=IMX+14*KMAX*IMX)
@@ -61,6 +61,8 @@ C
        CALL GETARG(3, VFILENAME)
        CALL GETARG(4, VFIELDNAME)
        CALL GETARG(5, TRACKFILENAME)
+
+       trackcount = 0
 
        BASETIME = datetime(1900, 1, 1, 0, 0, 0)
        SIXHOURS = timedelta(0, 6, 0, 0, 0)
@@ -250,6 +252,9 @@ C
         DTIMES(2) = TRACKTIME(2) - TCTIME
         if ((DTIMES(1)%total_seconds()).lt.0
      *  .or.(DTIMES(2)%total_seconds()).lt.0) cycle
+
+       trackcount = trackcount + 1
+       if (trackcount < 5) cycle
    
 c       IF (TCID.NE.STORMID.OR.
 c    *      TRACKTIME(1).GT.TCTIME.OR.
@@ -504,6 +509,7 @@ C
           RTAN1 = 100000.
           R = 1.0
           dist=disti(iang)
+          print *, 'disti=',disti
 c
 c  only return to 666 if rtan > 6m/s
 c
@@ -998,7 +1004,7 @@ C
 C  SEPERATES A FIELD INTO HURRICANE COMPONENT AND REMAINDER
 C
  
-       PARAMETER( NMX=24,nmx1=nmx+1,nmx2=nmx*2,nmx6=nmx*6)
+       PARAMETER( NMX=64,nmx1=nmx+1,nmx2=nmx*2,nmx6=nmx*6)
        PARAMETER (IMX=640, JMX=320)
        DIMENSION XR(NMX),XD(IMX,JMX)
 CC
@@ -1015,7 +1021,7 @@ c new arrays
         common /matrix/ a(nmx,nmx),capd2
         common /vect/xvect(nmx),yvect(nmx)
 c
-        DATA XR/24*0./
+        DATA XR/64*0./
 C
 C  XC,YC ARE HURRICANE COORDINATES
 C  RO  IS RADIUS AT WHICH HURRICANE COMPONENT OF FIELD GOES TO ZERO
@@ -1180,7 +1186,7 @@ c       COMMON  /POSIT/ XOLD,YOLD
          END
        SUBROUTINE CENTER(UP,VP,DELG,THAG)
 CC
-       PARAMETER (IMX=640 , JMX=320, nmx=24)
+       PARAMETER (IMX=640 , JMX=320, nmx=64)
 CC     PARAMETER  (IMX=75, JMX=75)
        PARAMETER  ( KMAX=18,  LGI=20 )
        PARAMETER  (IGL = 500)
@@ -1302,7 +1308,7 @@ C
       RETURN
       END  
       SUBROUTINE maxth(dumu,dumv,dxc,dyc,rmxlim,tw)
-        parameter(nmx=8,imx=640,jmx=320,lgth=30,iimx=110)
+        parameter(nmx=64,imx=640,jmx=320,lgth=30,iimx=110)
         dimension dumu(imx,jmx),dumv(imx,jmx),tw(imx,jmx)
         dimension th(imx,jmx),tanmx(imx,jmx),tprof(7,7,lgth)
      1      ,itpos(7,7),tmax(7,7),tanavg(iimx)
@@ -1321,6 +1327,14 @@ c
         dyc=yold/pi180-ycorn
         ixc=int(dxc)+1
         iyc=int(dyc)+1
+        print *,'ixc=',ixc
+        print *,'iyc=',iyc
+        print *,'dxc=',dxc
+        print *,'dyc=',dyc
+        print *,'xold=',xold
+        print *,'xcorn=',xcorn
+        print *,'yold=',yold
+        print *,'ycorn=',ycorn
         ist=ixc-3
         jst=iyc-3
         iend=ixc+3
@@ -1354,7 +1368,7 @@ c
          do 53 j=1,npts
           do 54 ir=2,lgth-1
           if(tprof(i,j,ir).gt.tprof(i,j,ir-1).and.tprof(i,j,ir)
-     1     .gt.tprof(i,j,ir+1))then
+     *     .gt.tprof(i,j,ir+1))then
             tmax(i,j)=tprof(i,j,ir)
 cc             itpos(i,j)=100*(ist+i)+j+jst
 cc
@@ -1384,8 +1398,9 @@ c
 c  use position of the largest relative maximum as the adjusted
 c  center location
 c
-       ycn=float(mod(ipos,100))-1.
-       xcn=float(ipos/100)-1.
+       print *, 'ipos=',ipos
+       ycn=float(mod(ipos,imx))-1.
+       xcn=float(ipos/imx)-1.
        ixc=int(xcn)+1
        iyc=int(ycn)+1
          xctest=(xcn+xcorn)*pi180
@@ -1394,11 +1409,15 @@ c
 c  recompute the tangential wind component based on new center
 c
        fact = cos(tha(1,iyc))
-       print *,'in maxth',ycn,xcn,fact,xctest/pi180,yctest/pi180
-      print*, 'ixc=',ixc
-      print*, 'iyc=',iyc
-      print*, shape(del)
-      print*, 'del=', del(ixc+1,iyc+1)
+      !  print *,'in maxth',ycn,xcn,fact,xctest/pi180,yctest/pi180
+      ! print*, 'ixc=',ixc
+      ! print*, 'iyc=',iyc
+      ! print *, 'ist=', ist
+      ! print *, 'jst=', jst
+      ! print *, 'iend=', iend
+      ! print *, 'jend=', jend
+      ! print*, shape(del)
+      ! print*, 'del=', del(ixc+1,iyc+1)
        print*,ixc,iyc,del(ixc+1,iyc+1)/pi180,tha(ixc+1,iyc+1)/pi180
        do 334 j=1,jmx
        do 334 i=1,imx
@@ -1424,7 +1443,7 @@ c
          call calcr( rxx,rtan,xcn,ycn,yctest,dumu,dumv )
          tanavg(ir)=rtan
          if(tanavg(ir-2).lt.tanavg(ir-1).and.tanavg(ir).lt.tanavg(ir-1)
-     1     .and.iflag.eq.0)then
+     *     .and.iflag.eq.0)then
            hmax=tanavg(ir-1)
            rmxavg=rxx-deltar
            iflag=1
@@ -1447,7 +1466,7 @@ c
         return
         end
        SUBROUTINE CALCRa(RO,RTAN,iang,dist)
-       PARAMETER ( NMX=24)
+       PARAMETER ( NMX=64)
        PARAMETER (IMX=640 , JMX=320)
        COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),
      *      DEL(IMX,JMX),THA(IMX,JMX),XF(IMX,JMX),DS(IMX,JMX)
@@ -1466,25 +1485,39 @@ C
 
 c      
         THETA= 2.*PI*FLOAT(iang-1)/FLOAT(NMX)
-        X=RO/fact*COS(THETA)+XC
+      !   X=RO*fact*COS(THETA)+XC
+        X=RO*COS(THETA)+XC
         Y=RO*SIN(THETA)+YC
-        IX=FLOOR(X/DX)
-        IY=FLOOR(Y/DY)
-        print *, 'X=',X
-        print *, 'Y=',Y
-        print *, 'DX=',DX
-        print *, 'DY=',DY
-        print *, 'XC=', XC
-        print *, 'YC=', YC
+        IX=X/DX+1
+        IY=Y/DY+1
+      !   print *, 'RO=', RO
+      !   print *, 'theta=', THETA
+      !   print *, 'XC=', XC
+      !   print *, 'YC=', YC
+      !   print *, 'Y=',Y
         IX1=IX+1
         IY1=IY+1
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
-        print *, "IX=",IX
-        print *, "IY=",IY
-       rtan=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,MODULO(IY+1, IY))
-     1      +  (1.-Q)*P*XF(MODULO(IX+1, IX),IY) +
-     1      P*Q*XF(MODULO(IX+1,IX),MODULO(IY+1,IY))
+      !   print *, 'RO=',RO
+      !   print *, 'XC=',XC
+      !   print *, 'X=',X
+      !   print *, 'DX=',DX
+      !   print *, "IX=",IX
+      !   print *, 'YC=',YC
+      !   print *, "Y=",Y
+      !   print *, "DY=",DY
+      !   print *, "IY=",IY
+      !   print *, 'mody=',modulo(IY+1,IY)
+      !   print *, XF(IX+1,IY)
+      !   print *, XF(IX+1,IY+1)
+!        rtan=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,MODULO(IY+1, IY))
+!      1      +  (1.-Q)*P*XF(max(MODULO(IX+1, IX),1),IY) +
+!      1      P*Q*XF(max(MODULO(IX+1,IX),1),max(MODULO(IY+1,IY),1))
+      !   print *, XF(max(MODULO(IX+1,IX),1),max(MODULO(IY+1,IY),1))
+       rtan=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY+1)
+     1      +  (1.-Q)*P*XF(IX+1,IY) +
+     1      P*Q*XF(IX+1,IY+1)
 10     CONTINUE
 c
 c
@@ -1548,7 +1581,7 @@ C
        RETURN
        END
         subroutine rodist
-        parameter(nmx=24)
+        parameter(nmx=64)
         common /vect/xvect(nmx),yvect(nmx)
        COMMON  /IFACT/NNN,rovect(nmx),RB,IENV
        COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,IX,IY
@@ -1572,7 +1605,7 @@ c
         return
         end
         subroutine amatrix
-        parameter(nmx=24)
+        parameter(nmx=64)
         common /matrix/ a(nmx,nmx),capd2
         common /vect/xvect(nmx),yvect(nmx)
        COMMON  /IFACT/NNN,rovect(nmx),RB,IENV
@@ -3800,7 +3833,7 @@ C
 c
 c  calculates the radial profile for eight azimuthal angles
 c
-       PARAMETER ( nmx=24)
+       PARAMETER ( nmx=64)
        PARAMETER (IMX=640 , JMX=320, iimx=110)
        DIMENSION xf(imx,jmx)
        dimension idst(nmx),hmax(nmx),rmax(nmx)
@@ -3854,7 +3887,7 @@ c
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
        XR(ir,I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY+1)
-     1      +  (1.-Q)*P*XF(IX+1,IY) + P*Q*XF(IX+1,IY+1)
+     *      +  (1.-Q)*P*XF(IX+1,IY) + P*Q*XF(IX+1,IY+1)
 11     continue
 c
 c find relative max after which ro check begins 
@@ -3884,16 +3917,16 @@ c
          do 13 ir=irend,irvgu,-1
             if(ir .lt. 2)then
          print*,'bound index i,ir,irend,irvgu,idst ',
-     1 i,ir,irend,irvgu,idst(i)
+     * i,ir,irend,irvgu,idst(i)
          print*,'xr ', xr(ir-1,i),xr(ir,i)
          print*,'other var ',
-     1 iravg,rdistl,rmxavg,deltar,rmxlim,iravg
+     * iravg,rdistl,rmxavg,deltar,rmxlim,iravg
          endif
             if(xr(ir-1,i).lt.0.)goto14
             if(xr(ir-1,i).gt.xr(ir,i).and.xr(ir-1,i).ge.xr(ir-2,i))then
                dist(i)=float(ir-1)*deltar
                print*,'readjusting dist'
-     1                ,dist(i),hmax(i),xr(ir-1,i),rmxlim
+     *                ,dist(i),hmax(i),xr(ir-1,i),rmxlim
                go to 14
 c
            endif
@@ -3924,12 +3957,12 @@ c
         print 4400,dist
 4400    format(25f4.1)
           write(4,400)
-     1        (float(ir)*deltar,(xr(ir,i)/100.,i=1,1),ir=1,iimx)
+     *        (float(ir)*deltar,(xr(ir,i)/100.,i=1,1),ir=1,iimx)
 400     format(25f5.1)
          RETURN
          END
        SUBROUTINE calcr(RO,RTAN,xc,yc,yold,u,v)
-       PARAMETER ( nmx=24)
+       PARAMETER ( nmx=64)
        PARAMETER (IMX=640, JMX=320)
        DIMENSION XR(NMX),u(imx,jmx),v(imx,jmx)
 C
@@ -3937,33 +3970,43 @@ C
 c      COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,id1,id2
 C
           PI = 4.*ATAN(1.0)
-       PI180 = pi/180.
+       PI180 = PI/180.
 c      FACT =  COS(YOLD*PI180)
 c      yo=yold*pi180
        fact=cos(yold)
 C
        DX=DDEL/PI180
        DY=DTHA/PI180
-c      XC = (XOLD-XCORN)*DX
-c      YC = (YOLD-YCORN)*DY
+      !  XC = (XOLD-XCORN)*DX
+      !  YC = (YOLD-YCORN)*DY
         DO 10 I=1,NMX
         THETA= 2.*PI*FLOAT(I-1)/FLOAT(NMX)
-        X=RO*COS(THETA)/fact +XC +1.
-        Y=RO*SIN(THETA)+YC +1.
-        IX=INT(X/DX)
-        IY=INT(Y/DY)
+      !   X=RO*fact*COS(THETA)+XC
+        X=RO*COS(THETA)+XC
+        Y=RO*SIN(THETA)+YC
+        IX=X/DX+1
+        IY=Y/DY+1
         IX1=IX+1
         IY1=IY+1
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
 c      XR(I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY+1)
 c    1      +  (1.-Q)*P*XF(IX+1,IY) + P*Q*XF(IX+1,IY+1)
+        print *, 'RO=',RO
+        print *, 'XC=',XC
+        print *, 'X=',X
+        print *, 'DX=',DX
+        print *, "IX=",IX
+        print *, 'YC=',YC
+        print *, "Y=",Y
+        print *, "DY=",DY
+        print *, "IY=",IY
        xr(i)=-sin(theta)*
-     1    ((1.-P)*(1.-Q)*u(IX,IY) +(1.-P)*Q*u(IX,IY+1)
-     1      +  (1.-Q)*P*u(IX+1,IY) + P*Q*u(IX+1,IY+1))
-     1         +cos(theta)*
-     1   ((1.-P)*(1.-Q)*v(IX,IY) +(1.-P)*Q*v(IX,IY+1)
-     1      +  (1.-Q)*P*v(IX+1,IY) + P*Q*v(IX+1,IY+1))
+     *    ((1.-P)*(1.-Q)*u(IX,IY) +(1.-P)*Q*u(IX,IY+1)
+     *      +  (1.-Q)*P*u(IX+1,IY) + P*Q*u(IX+1,IY+1))
+     *         +cos(theta)*
+     *   ((1.-P)*(1.-Q)*v(IX,IY) +(1.-P)*Q*v(IX,IY+1)
+     *      +  (1.-Q)*P*v(IX+1,IY) + P*Q*v(IX+1,IY+1))
 10     CONTINUE
        RTAN = 0.0
 c
@@ -3979,7 +4022,7 @@ c
 c
 c  finds rfind from azimuthally averaged radial profile of tang. wind
 c
-        parameter(imx=640,jmx=320,nmx=24,iimx=110)
+        parameter(imx=640,jmx=320,nmx=64,iimx=110)
         dimension tanuv(iimx)
 ccc       common /scale/rmxavg,rfind
 c
@@ -4028,7 +4071,7 @@ c
         return
         end
        subroutine bound2(u,v,tanuv,r0,xc,yc,yyo)
-       PARAMETER(IMX=640,JMX=320,nmx=24)
+       PARAMETER(IMX=640,JMX=320,nmx=64)
        DIMENSION u(imx,jmx),v(imx,jmx),tani(nmx)
 c       COMMON  /POSIT/ XOLD,YOLD,XCORN,YCORN,Rxx,XV,YV
        COMMON  /TOTAL/ DDEL,dtha
@@ -4056,11 +4099,11 @@ c      vi=(1.-P)*(1.-Q)*v(IX,IY) +(1.-P)*Q*v(IX,IY+1)
 c    1      +  (1.-Q)*P*v(IX+1,IY) + P*Q*v(IX+1,IY+1)
 c      tani(i)=-sin(theta)*ui +cos(theta)*vi
        tani(i)=-sin(theta)*
-     1    ((1.-P)*(1.-Q)*u(IX,IY) +(1.-P)*Q*u(IX,IY+1)
-     1      +  (1.-Q)*P*u(IX+1,IY) + P*Q*u(IX+1,IY+1))
-     1         +cos(theta)*
-     1   ((1.-P)*(1.-Q)*v(IX,IY) +(1.-P)*Q*v(IX,IY+1)
-     1      +  (1.-Q)*P*v(IX+1,IY) + P*Q*v(IX+1,IY+1))
+     *    ((1.-P)*(1.-Q)*u(IX,IY) +(1.-P)*Q*u(IX,IY+1)
+     *      +  (1.-Q)*P*u(IX+1,IY) + P*Q*u(IX+1,IY+1))
+     *         +cos(theta)*
+     *   ((1.-P)*(1.-Q)*v(IX,IY) +(1.-P)*Q*v(IX,IY+1)
+     *      +  (1.-Q)*P*v(IX+1,IY) + P*Q*v(IX+1,IY+1))
 10     CONTINUE
 c
         tanuv=0.
