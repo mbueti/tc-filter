@@ -8,16 +8,21 @@ LOADLIBS = -lblas -lnetcdff -lnetcdf
 # OPTIONS = -fno-underscoring -mmacosx-version-min=11.3 -fno-range-check 
 OPTIONS = -fcheck='all' -fno-range-check -ffpe-trap=zero,overflow,underflow -Og -g -fbacktrace
 
-target = filter-new
-object = filter-new.f
+target = filter
+object = filter.f
 
-filter-new: filter-new.f
+filter: filter.f
 
 #default: $(target)
 
 $(target): $(object)
-	$(FC) $(OPTIONS) $(LDFLAGS) $(CPPFLAGS) $(LOADLIBS) -o $@ datetime_module.f90 $^ 
+	$(FC) $(OPTIONS) $(LDFLAGS) $(CPPFLAGS) $(LOADLIBS) -c filter_routines.f90 
+	$(FC) $(OPTIONS) $(LDFLAGS) $(CPPFLAGS) $(LOADLIBS) -c datetime_module.f90
+	$(FC) $(OPTIONS) $(LDFLAGS) $(CPPFLAGS) $(LOADLIBS) -o $@ $^ datetime_module.o filter_routines.o
 
 clean:
 	rm -rf datetime_module.mod
+	rm -rf filter_routines.mod
+	rm -rf datetime_module.o
+	rm -rf filter_routines.o
 	rm -f $(target)

@@ -1,6 +1,9 @@
 filter-new
+filter
 input
 *.log
 fort.*
 *.nc
 syndat_tcvitals.*
+*.o
+*.mod
