@@ -9,9 +9,9 @@ LOADLIBS = -lblas -lnetcdff -lnetcdf
 OPTIONS = -fcheck='all' -fno-range-check -ffpe-trap=zero,overflow,underflow -Og -g -fbacktrace
 
 target = filter
-object = filter.f
+object = filter.f90
 
-filter: filter.f
+filter: filter.f90
 
 #default: $(target)
 
