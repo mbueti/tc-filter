@@ -7,7 +7,7 @@
      *           NLON, NLAT, NTIME, IMX, JMX, TRACKREAD,
      *           TCDATE, TCHOUR, STORMDAYS, STORMHOUR, STORMMIN,
      *           TRACKYEAR, TRACKMONTH, TRACKDAY, TRACKHOUR,
-     *           TRACKMIN, I, ITC, T, NTC
+     *           TRACKMIN, I, ITC, T, NTC, m
       REAL :: LONC, LATC
       LOGICAL :: END
       REAL, DIMENSION(2) :: TCLAT, TCLON
@@ -29,7 +29,7 @@
       TYPE(timedelta), DIMENSION(2) :: DTIMES
 
       PARAMETER (IMX=360, JMX=180, nmx=64)
-      PARAMETER (KMAX=18,LGI=20 ,iimx=200)
+      PARAMETER (KMAX=18,LGI=20 ,iimx=100)
       PARAMETER (IBLKMX=LGI*IMX+4*KMAX*IMX)
       PARAMETER (JBLKMX=IMX+14*KMAX*IMX)
 C
@@ -67,7 +67,7 @@ C
        BASETIME = datetime(1900, 1, 1, 0, 0, 0)
        SIXHOURS = timedelta(0, 6, 0, 0, 0)
 
-       PRINT *, "FILENAME=", UFILENAME
+C       PRINT *, "FILENAME=", UFILENAME
        STATUS = NF90_OPEN(path=UFILENAME, mode=NF90_WRITE, ncid=UNCID)
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 69)
        STATUS = NF90_INQ_VARID(UNCID, UFIELDNAME, UVARID)
@@ -119,7 +119,7 @@ C     *        1x,I4,1x,I4,1x,I4)
 C     DO ITC=1, NTCID
 c     STORMID = TCIDS(ITC)
       STORMID = '09L'
-      T = 1900
+      T = 1875
 C      DO T=1, NTIME
          STATUS = NF90_INQ_VARID(UNCID, UFIELDNAME, UVARID)
          if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 118)
@@ -278,23 +278,23 @@ C        END IF
           END IF
         END DO
 
-       print *, 'dt1=', DTIMES(1) % total_seconds()
-       print *, 'dt2=', DTIMES(2) % total_seconds()
+C       print *, 'dt1=', DTIMES(1) % total_seconds()
+C       print *, 'dt2=', DTIMES(2) % total_seconds()
 
-        print *,'dt1=',(1 - ((DTIMES(1) % total_seconds())
-     *           / (SIXHOURS % total_seconds())))
-        print *,'dt2=',(1 - (DTIMES(2) % total_seconds())
-     *           / (SIXHOURS % total_seconds()))
+C        print *,'dt1=',(1 - ((DTIMES(1) % total_seconds())
+C     *           / (SIXHOURS % total_seconds())))
+C        print *,'dt2=',(1 - (DTIMES(2) % total_seconds())
+C     *           / (SIXHOURS % total_seconds()))
 
         print *, 'T=',T
-        print *, 'sixhours=',SIXHOURS%total_seconds()
-        print *, 'tclon=',tclon(1)
-        print *, 'tclon=',tclon(2)
-        print *, 'tclat=',tclat(1)
-        print *, 'tclat=',tclat(2)
-        print *, (DTIMES(1)%total_seconds())/(SIXHOURS%total_seconds())
-        print *, 'TCTIME=', TCTIME%isoformat()
-        print *, 'TRACKTIME(1)=', TRACKTIME(1)%isoformat()
+C        print *, 'sixhours=',SIXHOURS%total_seconds()
+C        print *, 'tclon=',tclon(1)
+C        print *, 'tclon=',tclon(2)
+C        print *, 'tclat=',tclat(1)
+C        print *, 'tclat=',tclat(2)
+C        print *, (DTIMES(1)%total_seconds())/(SIXHOURS%total_seconds())
+C        print *, 'TCTIME=', TCTIME%isoformat()
+C        print *, 'TRACKTIME(1)=', TRACKTIME(1)%isoformat()
         XV = TCLON(1) * (1 - (DTIMES(1) % total_seconds())
      *                     / (SIXHOURS % total_seconds())) +
      *       TCLON(2) * (1 - (DTIMES(2) % total_seconds())
@@ -305,6 +305,10 @@ C        END IF
      *       TCLAT(2) * (1 - (DTIMES(2) % total_seconds())
      *                     / (SIXHOURS % total_seconds()))
 
+        print *, 'dtime=', dtimes(1)%total_seconds(),
+     *   dtimes(2)%total_seconds()
+        print *, 'tclon=', tclon(1), tclon(2)
+        print *, 'tclat=', tclat(1), tclat(2)
         PRINT *, 'XV=', XV
         PRINT *, 'YV=', YV
 C
@@ -483,11 +487,11 @@ c
         dist = rmxlim
 c
         print *, 'after maxth', xold, yold
+C        print *, 'dist=', dist
         xcp = xold*pi180
         ycp = yold*pi180
         write(4,*)xold,yold,xcp,ycp
         write(66,*)xold-360,yold,xcp,ycp
-C        stop
 C
 C
 C
@@ -520,7 +524,7 @@ C        end do
           RTAN1 = 100000.
           R = 1.0
           dist=disti(iang)
-          print *, 'dist=',dist
+C          print *, 'dist=',dist
 c
 c  only return to 666 if rtan > 6m/s
 c
@@ -531,14 +535,13 @@ c  return to 777 if dist or grad condition not met
 c
 777       continue
 c
-c         CALL CALCRa(R,RTAN,iang)
+         CALL CALCRa(R,RTAN,iang,dist)
           irdex=int(r/dr)
           rtan = rtani(irdex,iang)
           R = R + DR
 c         WRITE(56,*)R,RTAN
           RTAN2 = RTAN
           IF(RTAN.GT.600.)GO TO 666
-c         PRINT*,'R AND RTAN:  ',R,RTAN
           IF(RTAN2.GE.RTAN1.AND.R.GT.DIST.AND.X1.GT..5)GO TO 999
           IF(RTAN2.GE.RTAN1.AND.R.GT.DIST)THEN
             X1 = 1.0
@@ -553,22 +556,33 @@ c         PRINT*
 c
 C
           IF (X1.EQ.1.0) THEN
-            RNOT(iang) = (R-.1)/.8
+            RNOT(iang) = (R-.1)/.2
           ELSE
-            RNOT(iang) =  R/.8
+            RNOT(iang) =  R/.2
           ENDIF
 C
-c         RZR = R
-          rzr=dist
+           RZR = 5*R
+C          rzr=dist
+          m = 1
 1999      CONTINUE
+C          if (m.gt.300) THEN
+C            goto 6666
+C          end if
+          m = m+1
+C          print *, 'm=',m
+C          print *, 'dist=',dist
+C          print *, 'iang=',iang
           RZR = RZR + DR
-C         CALL CALCRa(RZR,RTAN,iang)
-          print *, 'dist=',dist
-          print *, 'rzr=',rzr
-          print *, 'dr=', dr
+C          print *, 'rzr=', rzr
+C          print *, 'rtan=', rtan
+          CALL CALCRa(RZR,RTAN,iang,dist)
+C          print *, 'dist=',dist
+C          print *, 'rzr=',rzr
+C          print *, 'dr=', dr
           irdex=int(rzr/dr)
           rtan = rtani(irdex,iang)
           IF (RTAN.GT.0.0) GO TO 1999
+6666      CONTINUE
 C
           RZRN = RZR
           RZR = RZR*111.19493
@@ -644,6 +658,7 @@ C        end if
            DO 990 I = 1 , IMX
              VFIL(I,J)  =  VFILS(I,J) +  XXD(I,J)
 990      CONTINUE
+
 C
 C
 C      PUT THE ENVIRONMENTAL WINDS INTO THE GFDL HISTROY TAPE
@@ -657,6 +672,7 @@ C
      *                      COUNT = (/ NLON, NLAT, 1 /))
         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 615)
 c       END DO
+C6666     continue
 C       END DO
         STATUS = NF90_CLOSE(UNCID)
         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 619)
@@ -1053,7 +1069,9 @@ c
         do 22 i=1,nmx
         ro=amax1(ro,rovect(i))
 22       continue
-        print*,'ro=',ro,capd2,a(1,1),a(2,1)
+C        print*,'rovect=',rovect
+C        print*,'ro=',ro,capd2,a(1,1),a(2,1)
+        ro = ro*1.5
           PI = 4.*ATAN(1.0)
        PI180 = 4.*ATAN(1.0)/180.
        FACT =  COS(YOLD*PI180)
@@ -1087,8 +1105,9 @@ C         BILINEAR INTERPOLATION
 C
 c
         Print*, 'calling BOUND from SEPAR '
+C        print*,'here is xr ',xr
         CALL BOUND(NMX,XR,rovect)
-        print*,'here is rovect ',rovect
+C        print*,'here is rovect ',rovect
 C
 c  xrop(nmx) are the interpolated values of the disturbance
 c   field at the rovect pts
@@ -1102,9 +1121,10 @@ c
         w=0.
         romax=ro
 C
-        print *, 'xold=', xold, 'yold=', yold
-        print *, 'xc=', xc, 'yc=', yc
-        print *, 'js=', JS, ' je=', JE
+C        print *, 'ro=',ro
+C        print *, 'xold=', xold, 'yold=', yold
+C        print *, 'xc=', xc, 'yc=', yc
+C        print *, 'js=', JS, ' je=', JE
         DO 10 IX=IS,IE
         DO 11 JY=JS,JE
              ro=romax
@@ -1178,6 +1198,7 @@ c       COMMON  /POSIT/ XOLD,YOLD
         DO 10 I=1,NMX
         THETA= 2.*PI*FLOAT(I-1)/FLOAT(NMX)
         X=RO(i)/fact*COS(THETA)+XC +1.
+C        print *, 'ro=', ro, ' x=', x
         Y=RO(i)*SIN(THETA)+YC +1.
         IX=NINT(X/DX)
         IY=NINT(Y/DY)
@@ -1224,6 +1245,8 @@ CCCCC      AFCT = 1.0E10
       IX = NINT(DX) + 1
       IY = NINT(DY) + 1
       PRINT*
+      PRINT*,'(x,y) OF Corn:  ',xcorn,ycorn
+      PRINT*,'(x,y) OF CENTER:  ',xcc,ycc
       PRINT*,'(I,J) OF CENTER:  ',IX,IY
       PRINT*
 C
@@ -1352,12 +1375,12 @@ c           print *, 'tha=', tha(1,1)
            tprof(i-ist+1,j-jst+1,ir)=tanp
 52         continue
 51      continue
-        print *, 'let us see the value of tprof'
-        print 333,((tprof(i,1,k),i=4,7),(tprof(i,2,k),i=4,7),
-     *    (tprof(i,3,k),i=4,7),(tprof(i,4,k),i=4,7),k=1,lgth)
-333      format(16f7.1)
-        write(220,333),((tprof(i,1,k),i=4,7),(tprof(i,2,k),i=4,7),
-     *    (tprof(i,3,k),i=4,7),(tprof(i,4,k),i=4,7),k=1,lgth)
+C        print *, 'let us see the value of tprof'
+C        print 333,((tprof(i,1,k),i=4,7),(tprof(i,2,k),i=4,7),
+C     *    (tprof(i,3,k),i=4,7),(tprof(i,4,k),i=4,7),k=1,lgth)
+C333      format(16f7.1)
+C        write(220,333) ((tprof(i,1,k),i=4,7),(tprof(i,2,k),i=4,7),
+C     *    (tprof(i,3,k),i=4,7),(tprof(i,4,k),i=4,7),k=1,lgth)
 c
 c  find the first relative maximum along each azimuthal direction
 c  find the position of the largest relative maximum
@@ -1458,7 +1481,7 @@ c
         print*,'found rmxavg ',rmxavg,hmax
         dxc=xcn
         dyc=ycn
-c      xold=xcn+xcorn
+C      xold=xcn+xcorn
 700     format(10f6.1)
          print 700,tanavg
        call findra( dxc,dyc,yctest,rmxavg,rfavg,tanavg)
@@ -1491,16 +1514,27 @@ C
 
 c
         THETA= 2.*PI*FLOAT(iang-1)/FLOAT(NMX)
-        X=RO/fact*COS(THETA)+XC
+        X=RO*COS(THETA)+XC
+C        print *, cos(theta)
+C        print *, 'x=', x, ' ro=', ro, ' xc=', xc, ' theta=', theta
+        x = max(mod(x, 361.0),1.0)
+        if (NINT(X).gt.360) X = X - 360
+        if (NINT(X).le.0) X = X + 360
         Y=RO*SIN(THETA)+YC
-        IX=INT(X/DX)
-        IY=INT(Y/DY)
-        IX1=IX+1
-        IY1=IY+1
+        X1=X+DX
+        x1 = max(mod(x1, 361.0),1.0)
+        if (NINT(X1).gt.360) X1 = X1 - 360
+        if (NINT(X1).le.0) X1 = X1 + 360
+        Y1=Y+DY
+        IX=nint(X/DX)
+        IY=nint(Y/DY)
+        IX1=NINT(X1/dx)
+        IY1=nint(Y1/dy)
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
-       rtan=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY+1)
-     1      +  (1.-Q)*P*XF(IX+1,IY) + P*Q*XF(IX+1,IY+1)
+C        print *, 'ix=', ix, ' iy=', iy
+       rtan=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY1)
+     1      +  (1.-Q)*P*XF(IX1,IY) + P*Q*XF(IX1,IY1)
 10     CONTINUE
 c
 c
@@ -3855,10 +3889,6 @@ c
         X=(RO*COS(THETA)) +XC
         if (NINT(X).gt.360) X = X - 360
         Y=(RO*SIN(THETA)) +YC + 91.0
-        print *, 'x=', x
-        print *, 'y=', y
-C        X1=X+XC
-C        Y1=Y+YC
         X1=X+DX
         if (NINT(X1).gt.360) X1 = X1 - 360
         Y1=Y+DY
@@ -3868,11 +3898,11 @@ C        Y1=Y+YC
         IY1=NINT(Y1/DY)
 C        IX1=IX+1
 C        IY1=IY+1
-        print *, 'x=', x
-        print *, 'ix=', ix
-        print *, 'dx=', dx
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
+        if (IY.gt.jmx.or.iy1.gt.jmx) THEN
+          CYCLE
+        end if
        XR(ir,I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY1)
      1      +  (1.-Q)*P*XF(IX1,IY) + P*Q*XF(IX1,IY1)
 11     continue
@@ -3958,16 +3988,20 @@ c      XC = (XOLD-XCORN)*DX
 c      YC = (YOLD-YCORN)*DY
         DO 10 I=1,NMX
         THETA= 2.*PI*FLOAT(I-1)/FLOAT(NMX)
-C        X=RO*COS(THETA)/fact +XC +1.
-C        Y=RO*SIN(THETA)+YC +1.
-        X=max(mod((RO*COS(THETA)/fact) +XC, 361.0),1.0)
-        Y=max(mod((RO*SIN(THETA)) +YC + 90.0, 181.0), 1.0) - 90.0
-        X1=max(mod(X+XC, 361.0),1.0)
-        Y1=max(mod(Y+YC, 181.0), 1.0) - 90.0
-        IX=max(mod(nint(X/DX), imx+1), 1)
-        IY=max(mod(nint(Y/DY), jmx+1), 1)
-        IX1=max(mod(nint(X1/DX), jmx+1), 1)
-        IY1=max(mod(nint(Y1/DY), jmx+1), 1)
+        X=RO*COS(THETA)/fact +XC +1.
+        if (NINT(X).gt.360) X = X - 360
+        Y=RO*SIN(THETA)+YC +1.
+C        X=max(mod((RO*COS(THETA)/fact) +XC, 361.0),1.0)
+C        Y=max(mod((RO*SIN(THETA)) +YC + 90.0, 181.0), 1.0) - 90.0
+C        X1=max(mod(X+XC, 361.0),1.0)
+C        Y1=max(mod(Y+YC, 181.0), 1.0) - 90.0
+        X1=X+DX
+        if (NINT(X1).gt.360) X1 = X1 - 360
+        Y1=Y+DY
+        IX=NINT(X/DX)
+        IY=NINT(Y/DY)
+        IX1=NINT(X1/DX)
+        IY1=NINT(Y1/DY)
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
 c      XR(I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY+1)
@@ -3997,7 +4031,7 @@ c
         dimension tanuv(iimx)
 ccc       common /scale/rmxavg,rfind
 c
-        DR=0.5
+        DR=1.0
 c
 c
         dist= rmxavg*1.5
@@ -4070,7 +4104,6 @@ C        YN=MAX(mod((R0*SIN(THETA))/(arad*pi180)+YC+90.0, 181.0), 1.0)
         IY1=IY+1
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
-        print *, 'y=', y, 'y1=', y1
 c      ui=(1.-P)*(1.-Q)*u(IX,IY) +(1.-P)*Q*u(IX,IY+1)
 c    1      +  (1.-Q)*P*u(IX+1,IY) + P*Q*u(IX+1,IY+1)
 c      vi=(1.-P)*(1.-Q)*v(IX,IY) +(1.-P)*Q*v(IX,IY+1)
