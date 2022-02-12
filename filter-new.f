@@ -119,8 +119,7 @@ C     *        1x,I4,1x,I4,1x,I4)
 C     DO ITC=1, NTCID
 c     STORMID = TCIDS(ITC)
       STORMID = '09L'
-      T = 1875
-C      DO T=1, NTIME
+      DO T=1, NTIME
          STATUS = NF90_INQ_VARID(UNCID, UFIELDNAME, UVARID)
          if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 118)
          STATUS = NF90_GET_VAR(UNCID, UVARID, U,
@@ -249,12 +248,12 @@ C
         DTIMES(2) = TRACKTIME(2) - TCTIME
 
 C     UNCOMMENT WHEN ITERATING TRACK
-C        IF (TCID.NE.STORMID.OR.
-C     *      TRACKTIME(1).GT.TCTIME.OR.
-C     *      TRACKTIME(2).LT.TCTIME
-C     *  ) THEN
-C           CYCLE
-C        END IF
+        IF (TCID.NE.STORMID.OR.
+     *      TRACKTIME(1).GT.TCTIME.OR.
+     *      TRACKTIME(2).LT.TCTIME
+     *  ) THEN
+           CYCLE
+        END IF
 
         PRINT *, TCID
         PRINT *, STORMID
@@ -634,11 +633,6 @@ C
         print *, TCTIME % isoformat()
         LONC = XC/PI180
         LATC = YC/PI180
-C        UNCOMMENT WHEN ITERATING TRACK
-C        if ((abs(lonc-tclon(1)).gt.1.0).or.
-C     *      (abs(latc-tclat(1)).gt.1.0)) THEN
-C          cycle
-C        end if
          DO 880 J = 1, JMX
            DO 880 I = 1, IMX
              XXD(I,J) = UFIL(I,J) - UFILS(I,J)
@@ -672,8 +666,7 @@ C
      *                      COUNT = (/ NLON, NLAT, 1 /))
         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 615)
 c       END DO
-C6666     continue
-C       END DO
+       END DO
         STATUS = NF90_CLOSE(UNCID)
         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 619)
         STATUS = NF90_CLOSE(VNCID)
