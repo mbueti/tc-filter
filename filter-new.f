@@ -7,8 +7,9 @@
      *           NLON, NLAT, NTIME, IMX, JMX, TRACKREAD,
      *           TCDATE, TCHOUR, STORMDAYS, STORMHOUR, STORMMIN,
      *           TRACKYEAR, TRACKMONTH, TRACKDAY, TRACKHOUR,
-     *           TRACKMIN, I, ITC, T, NTC, m
-      REAL :: LONC, LATC
+     *           TRACKMIN, I, ITC, T, NTC, m, tcdum1, tcdum2,
+     *           tcdum3, tcdum4, rcls
+      REAL :: LONC, LATC, rscale
       LOGICAL :: END
       REAL, DIMENSION(2) :: TCLAT, TCLON
       INTEGER, DIMENSION(NF90_MAX_VAR_DIMS) :: dimIDs
@@ -92,7 +93,7 @@ C     *        F4.0,A1,1x,I3,1x,I3,3I5,
 C     *        1x,i2,1x,I3,1x,I4,1x,I4,1x,I4,1x,I4,1x,I4,
 C     *        1x,I4,1x,I4,1x,I4)
 17    FORMAT(A4, 1x, A3, 1x, A10, I2, I2, I2, 1x, I2, I2,
-     *      1x, F3.0, A1, 1x, F4.0, A1, 1x, I3, 1x I3, 1x, I4,
+     *      1x, F3.0, A1, 1x, F4.0, A1, 1x, I4, 1x I3, 1x, I4,
      *      1x, I4, 1x, I4, 1x, I2, 1x, I3, 1x, I4, 1x, I4,
      *      1x, I4, 1x, I7, 1x, I4, 1x, I4, 1x, I4)
       OPEN(TRACKREAD, file=TRACKFILENAME, status='old')
@@ -233,7 +234,8 @@ C
 
           READ(TRACKREAD, 17, END=16) TCORG, TCID, TCNAME, TRACKYEAR,
      *                      TRACKMONTH, TRACKDAY, TRACKHOUR, TRACKMIN,
-     *                      TCLAT(2), TCNS(2), TCLON(2), TCEW(2)
+     *                      TCLAT(2), TCNS(2), TCLON(2), TCEW(2),
+     *                      tcdum1, tcdum2, tcdum3, tcdum4, rcls
           TRACKTIME(2) = datetime(2000+TRACKYEAR, TRACKMONTH,
      *                       TRACKDAY, TRACKHOUR, TRACKMIN, 0)
           END=.FALSE.
@@ -331,7 +333,7 @@ CC
 CC
 CC    FILTER IS DEFINED IN MWR PAPER OF KURIHARA, ET.ALL, 1990:
 CC
-         IFL = 2
+         IFL = 1
 CC
 CC
 CC**********************************************************
@@ -555,12 +557,13 @@ c         PRINT*
 c
 C
           IF (X1.EQ.1.0) THEN
-            RNOT(iang) = (R-.1)/.2
+            RNOT(iang) = (R-.1)/.1
           ELSE
-            RNOT(iang) =  R/.2
+            RNOT(iang) =  R/.1
           ENDIF
 C
-           RZR = 5*R
+           rscale = 2.0 - tanh(exp(1.0)*(rcls-100)/1500)
+           RZR = rscale*float(rcls)/111.19393
 C          rzr=dist
           m = 1
 1999      CONTINUE
