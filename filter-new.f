@@ -2,19 +2,32 @@
       USE netcdf
       USE datetime_module, ONLY: datetime, timedelta
 
+        implicit none
+
       INTEGER :: UNCID, VNCID, STATUS, UVARID, VVARID,
      *           LATVARID, LONVARID, TIMEVARID,
      *           NLON, NLAT, NTIME, IMX, JMX, TRACKREAD,
      *           TCDATE, TCHOUR, STORMDAYS, STORMHOUR, STORMMIN,
      *           TRACKYEAR, TRACKMONTH, TRACKDAY, TRACKHOUR,
      *           TRACKMIN, I, ITC, T, NTC, m, tcdum1, tcdum2,
-     *           tcdum3, tcdum4, rcls
-      REAL :: LONC, LATC, rscale
+     *           tcdum3, tcdum4, rcls, nmx, kmax, lgi, iimx,
+     *           IBLKMX, JBLKMX, dftx, dfty, iang, icx, icy,
+     *           ie, ienv, ifl, ihx, ihy, imax, iimax, irdex,
+     *           iw, ix, iy, j, jj, jmax, jjmax, jn, js,
+     *           ngd, ngr, nn1, nn2, nn3, nn4, nnn, NSTFLG,
+     *           NTCID, ntr
+      REAL :: LONC, LATC, rscale, xold, yold, xv, yv,
+     *        xcorn, ycorn, xcg, ycg, xcp, ycp, xc, yc,
+     *        rzr, rzrn, ddel, dtha, dist, dr, dt, dx, dy,
+     *        dxc, dyc, factr, rtan1, rtan2, r, rad, rrdd,
+     *        pi, pi180, rb, rmxlim, x1, xcgnew, ycgnew,
+     *        rtan
       LOGICAL :: END
       REAL, DIMENSION(2) :: TCLAT, TCLON
       INTEGER, DIMENSION(NF90_MAX_VAR_DIMS) :: dimIDs
       REAL, DIMENSION(:, :), ALLOCATABLE :: U, V
       REAL, DIMENSION(:), ALLOCATABLE :: LAT, LON, TIME
+C      real, dimension(:,:) :: del
       CHARACTER(len=220) :: UFILENAME, VFILENAME, TRACKFILENAME
       CHARACTER(len=7) :: UFIELDNAME, VFIELDNAME
       CHARACTER(len=10) :: TCNAME
@@ -34,19 +47,27 @@
       PARAMETER (IBLKMX=LGI*IMX+4*KMAX*IMX)
       PARAMETER (JBLKMX=IMX+14*KMAX*IMX)
 C
-      COMMON /FILEC/  TYP1C(IMX,LGI),TYP2C(KMAX,IMX,4)
-      COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),
-     *               DEL(IMX,JMX),THA(IMX,JMX),TANP(IMX,JMX),DS(IMX,JMX)
+
+      real, dimension(imx, jmx) :: del, tha, tang, tanp, ds,
+     *                             xf
+      real, dimension(imx, jmx, 2) :: dmmm
+      real, dimension(nmx) :: disti, rnot
+      real, dimension(iimx,nmx) :: rtani
+      integer, dimension(imx, lgi) :: typ1c
+      integer, dimension(kmax, imx, 4) :: typ2c
+      COMMON /FILEC/  TYP1C,TYP2C
+      COMMON /WINDS/ DMMM,TANG,
+     *               DEL,THA,TANP,DS
 C
 C
       COMMON  /GDINF/ NGD,NGR,NTR,DT,JS,JN,IE,IW,IIMAX,IMAX,JJMAX,
      *                JMAX,NSTFLG,ICX,ICY,IHX,IHY,DFTX,DFTY
-      COMMON /pass/rtani(iimx,nmx),disti(nmx)
+      COMMON /pass/rtani,disti
       COMMON /VAR/  DIST,NN1,NN2,NN3,NN4,IFL
       COMMON /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,IX,IY
       COMMON /TOTAL/ DDEL,DTHA
-      COMMON /IFACT/NNN,RNOT(nmx),RB,IENV
-      COMMON /XXX/  XF(IMX,JMX),XC,YC,DX,DY
+      COMMON /IFACT/NNN,RNOT,RB,IENV
+      COMMON /XXX/  XF,XC,YC,DX,DY
       REAL, DIMENSION(IMX) :: FACG1,FACG2,FACT1,FACT2
       REAL, DIMENSION(IBLKMX) :: FILC
       REAL, DIMENSION(JBLKMX) :: DIAG
@@ -1033,6 +1054,8 @@ C
 C  SEPERATES A FIELD INTO HURRICANE COMPONENT AND REMAINDER
 C
 
+       integer :: ix, iy
+       real :: xv, yv, xold, yold, xcorn, ycorn
        PARAMETER( NMX=64,nmx1=nmx+1,nmx2=nmx*2,nmx6=nmx*6)
        PARAMETER (IMX=360 , JMX=180)
        DIMENSION XR(NMX),XD(IMX,JMX)
@@ -1181,6 +1204,7 @@ c            xh(ix,jy)=xf(ix,jy)-temp
        END
         SUBROUTINE BOUND(NMX,XR,ro)
 C
+        real :: xv, yv
         PARAMETER (IMX=360 , JMX=180)
 C
         DIMENSION XR(NMX),ro(nmx)
@@ -1209,6 +1233,7 @@ C        print *, 'ro=', ro, ' x=', x
          END
        SUBROUTINE CENTER(UP,VP,DELG,THAG)
 CC
+       real :: xv, yv
        PARAMETER (IMX=360 , JMX=180, nmx=64)
 CC     PARAMETER  (IMX=75, JMX=75)
        PARAMETER  ( KMAX=18,  LGI=20 )
@@ -1327,6 +1352,7 @@ C
       RETURN
       END
       SUBROUTINE maxth(dumu,dumv,dxc,dyc,rmxlim,tw)
+        real :: xv, yv
         parameter(nmx=64,imx=360,jmx=180,lgth=60,iimx=110)
         dimension dumu(imx,jmx),dumv(imx,jmx),tw(imx,jmx)
         dimension th(imx,jmx),tanmx(imx,jmx),tprof(7,7,lgth)
@@ -1491,6 +1517,7 @@ c
         return
         end
        SUBROUTINE CALCRa(RO,RTAN,iang,dist)
+       real :: xv, yv
        PARAMETER ( NMX=64)
        PARAMETER (IMX=360 , JMX=180)
        COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),
@@ -1594,6 +1621,7 @@ C
        RETURN
        END
         subroutine rodist
+        real :: xv, yv
         parameter(nmx=64)
         common /vect/xvect(nmx),yvect(nmx)
        COMMON  /IFACT/NNN,rovect(nmx),RB,IENV
@@ -1618,6 +1646,7 @@ c
         return
         end
         subroutine amatrix
+          real :: xv, yv
         parameter(nmx=64)
         common /matrix/ a(nmx,nmx),capd2
         common /vect/xvect(nmx),yvect(nmx)
@@ -3833,6 +3862,7 @@ C
 c
 c  calculates the radial profile for eight azimuthal angles
 c
+       real :: xv, yv
        PARAMETER ( nmx=64)
        PARAMETER (IMX=360 , JMX=180, iimx=100)
        DIMENSION xf(imx,jmx)
