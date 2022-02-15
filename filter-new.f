@@ -21,7 +21,7 @@
      *        rzr, rzrn, ddel, dtha, dist, dr, dt, dx, dy,
      *        dxc, dyc, factr, rtan1, rtan2, r, rad, rrdd,
      *        pi, pi180, rb, rmxlim, x1, xcgnew, ycgnew,
-     *        rtan
+     *        rtan, mergefrac
       LOGICAL :: END
       REAL, DIMENSION(2) :: TCLAT, TCLON
       INTEGER, DIMENSION(NF90_MAX_VAR_DIMS) :: dimIDs
@@ -583,7 +583,7 @@ C
             RNOT(iang) =  R/.1
           ENDIF
 C
-           rscale = 2.0 - tanh(exp(1.0)*(rcls-100)/1500)
+           rscale = 3.0 - 2*tanh(exp(1.0)*(rcls-100)/1500)
            RZR = rscale*float(rcls)/111.19393
 C          rzr=dist
           m = 1
@@ -665,7 +665,8 @@ C
          CALL SEPAR(XXD)
          DO 890 J = 1, JMX
            DO 890 I = 1, IMX
-             UFIL(I,J)  =  UFILS(I,J) +  XXD(I,J)
+             UFIL(I,J)  =  UFILS(I,J)/mergefrac(lon,lat,i,j,rcls,xc,yc)+
+     *                     mergefrac(lon,lat,i,j,rcls,xc,yc)*XXD(I,J)
 890      CONTINUE
          DO 980 J = 1 , JMX
            DO 980 I = 1 , IMX
@@ -674,7 +675,8 @@ C
          CALL SEPAR(XXD)
          DO 990 J = 1 , JMX
            DO 990 I = 1 , IMX
-             VFIL(I,J)  =  VFILS(I,J) +  XXD(I,J)
+             VFIL(I,J)  =  VFILS(I,J)/mergefrac(lon,lat,i,j,rcls,xc,yc)+
+     *                     mergefrac(lon,lat,i,j,rcls,xc,yc)*XXD(I,J)
 990      CONTINUE
 
 C
@@ -697,6 +699,24 @@ c       END DO
         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 621)
         STOP
       END
+
+      real function mergefrac(lon,lat,i,j,rcls,xc,yc)
+        implicit NONE
+        integer :: imx, jmx
+        integer, intent(in) :: i,j, rcls
+        real, intent(in) :: xc, yc
+        PARAMETER (IMX=360, JMX=180)
+        real, dimension(imx), intent(in) :: lon
+        real, dimension(jmx), intent(in) :: lat
+        real :: dlon, dlat, dx, dy, dr
+
+        dlon = lon(i) - xc
+        dlat = lat(j) - yc
+        dx = dlon*111.19393
+        dy = dlat*111.19393
+        dr = sqrt(dx**2+dy**2)
+        mergefrac = min(dr/(4.0*rcls), 1.0)
+      end function mergefrac
 
       SUBROUTINE PHASE(IFL,U,V,IMX,JMX,US,VS)
         implicit none
