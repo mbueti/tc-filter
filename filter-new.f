@@ -698,52 +698,10 @@ c       END DO
         STOP
       END
 
-      FUNCTION MAXMAG(A,LENGTH)
-CC
-CC*********************************************************************
-CC                                                                    *
-CC   THIS FUNCTION OBTAINS THE INDEX (OR LOCATION)  OF THE MAXIMUM    *
-CC   OR MINIMUM VALUE OF AN ARRAY                                     *
-CC                                                                    *
-CC*********************************************************************
-CC                                                                    *
-CC
-CCC       FUNCTION RETURNS ZERO ORIGIN INDEX!!!!!
-      DIMENSION A(LENGTH)
-       HTEMP=-1.E30
-       DO 10 I=1,LENGTH
-       IF(A(I).GT.HTEMP) IB=I
-       IF(A(I).GT.HTEMP) HTEMP=A(I)
- 10    CONTINUE
-       MAXMAG=IB-1
-       RETURN
-       ENTRY MINMAG(A,LENGTH)
-       HTEMP=1.E30
-       DO 11 I=1,LENGTH
-       IF(A(I).LT.HTEMP) IB=I
-       IF(A(I).LT.HTEMP) HTEMP=A(I)
-11     CONTINUE
-       MINMAG=IB-1
-       RETURN
-      ENTRY MINVAL(A,LENGTH)
-       HTEMP=1.E30
-       DO 20 I=1,LENGTH
-       IF(A(I).LT.HTEMP) IB=I
-       IF(A(I).LT.HTEMP) HTEMP=A(I)
- 20    CONTINUE
-       MINVAL=IB-1
-       RETURN
-       ENTRY MAXVAL(A,LENGTH)
-       HTEMP=-1.E30
-       DO 21 I=1,LENGTH
-       IF(A(I).GT.HTEMP) IB=I
-       IF(A(I).GT.HTEMP) HTEMP=A(I)
-21     CONTINUE
-       MAXVAL=IB-1
-      RETURN
-      END
-C
       SUBROUTINE PHASE(IFL,U,V,IMX,JMX,US,VS)
+        implicit none
+        integer, intent(in) :: ifl, imx, jmx
+        integer :: nx
       PARAMETER  (NX=25)
 CC************************************************************************
 CC                                                                       *
@@ -774,11 +732,16 @@ CC                                                                       *
 CC************************************************************************
 CC
 CC
-      DIMENSION     U(IMX,JMX), V(IMX,JMX)
-      DIMENSION    US(IMX,JMX),VS(IMX,JMX)
-      DIMENSION    TK(NX),AMPF(100)
-      DIMENSION    XTU(IMX,NX),XTV(IMX,NX)
-      DIMENSION    YTU(JMX,NX),YTV(JMX,NX)
+      real, DIMENSION(imx, jmx), intent(in) :: U, V
+      real, dimension(imx, jmx), intent(out) :: US, VS
+      real, dimension(nx) :: tk
+      real, dimension(100) :: ampf
+      real, DIMENSION(imx, nx) :: XTU,XTV
+      real, DIMENSION(jmx, nx) :: YTU,YTV
+      real :: amm, amp, amp1, chg, ckg, cosf, fact,
+     *        pi, tn, tnn, tff, tfr, zz
+      integer :: i,  imxm, irt, ismth, k, kt, kty,
+     *           j, jmxm, na, nn, nty, ntym, nz
 CC
 CC
       IMXM  = IMX-1
