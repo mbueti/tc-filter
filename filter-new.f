@@ -138,9 +138,10 @@ C     *        1x,I4,1x,I4,1x,I4)
       END DO
       CLOSE(TRACKREAD)
 
-C     DO ITC=1, NTCID
-c     STORMID = TCIDS(ITC)
-      STORMID = '09L'
+      DO ITC=1, NTCID
+      STORMID = TCIDS(ITC)
+      print *, 'stormid=', stormid
+C      STORMID = '09L'
       DO T=1, NTIME
          STATUS = NF90_INQ_VARID(UNCID, UFIELDNAME, UVARID)
          if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 118)
@@ -691,7 +692,7 @@ C
      *                      START = (/ 1, 1, T /),
      *                      COUNT = (/ NLON, NLAT, 1 /))
         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 615)
-c       END DO
+       END DO
        END DO
         STATUS = NF90_CLOSE(UNCID)
         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 619)
