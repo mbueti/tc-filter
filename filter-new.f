@@ -39,8 +39,11 @@ C      real, dimension(:,:) :: del
 
       TYPE(datetime), DIMENSION(2) :: TRACKTIME
       TYPE(datetime) :: BASETIME, TCTIME
-      TYPE(timedelta) :: DTIME, SIXHOURS
-      TYPE(timedelta), DIMENSION(2) :: DTIMES
+      TYPE(timedelta) :: DTIME, shdelta
+C      , SIXHOURS
+C      TYPE(timedelta), DIMENSION(2) :: DTIMES
+      REAL, DIMENSION(2) :: DTIMES
+      real :: sixhours
 
       PARAMETER (IMX=360, JMX=180, nmx=64)
       PARAMETER (KMAX=18,LGI=20 ,iimx=100)
@@ -87,7 +90,8 @@ C
        CALL GETARG(5, TRACKFILENAME)
 
        BASETIME = datetime(1900, 1, 1, 0, 0, 0)
-       SIXHOURS = timedelta(0, 6, 0, 0, 0)
+       shdelta = timedelta(0, 6, 0, 0, 0)
+       sixhours = shdelta % total_seconds()
 
 C       PRINT *, "FILENAME=", UFILENAME
        STATUS = NF90_OPEN(path=UFILENAME, mode=NF90_WRITE, ncid=UNCID)
@@ -102,6 +106,10 @@ C       PRINT *, "FILENAME=", UFILENAME
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 77)
        STATUS = NF90_INQUIRE_DIMENSION(UNCID, dimIDs(3), len = NTIME)
        if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 79)
+       STATUS = NF90_open(VFILENAME, NF90_WRITE, VNCID)
+       if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 146)
+       STATUS = NF90_INQ_VARID(VNCID, VFIELDNAME, VVARID)
+       if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 148)
 
        ALLOCATE(U(NLON, NLAT))
        ALLOCATE(V(NLON, NLAT))
@@ -143,6 +151,103 @@ C     *        1x,I4,1x,I4,1x,I4)
       print *, 'stormid=', stormid
 C      STORMID = '09L'
       DO T=1, NTIME
+        i=0
+        m=0
+        tcdum1=0
+        tcdum2=0
+        tcdum3=0
+        tcdum4=0
+        rcls=0
+        dftx=0
+        dfty=0
+        iang=0
+        icx=0
+        icy=0
+        ie=0
+        ienv=0
+        ifl=0
+        ihx=0
+        ihy=0
+        imax=0
+        iimax=0
+        irdex=0
+        iw=0
+        ix=0
+        iy=0
+        j=0
+        jj=0
+        jmax=0
+        jjmax=0
+        jn=0
+        js=0
+        ngd=0
+        ngr=0
+        nn1=0
+        nn2=0
+        nn3=0
+        nn4=0
+        nnn=0
+        nstflg=0
+        ntr=0
+
+        LONC=0
+        LATC=0
+        rscale=0
+        xold=0
+        yold=0
+        xv=0
+        yv=0
+        xcorn=0
+        ycorn=0
+        xcg=0
+        ycg=0
+        xcp=0
+        ycp=0
+        xc=0
+        yc=0
+        rzr=0
+        rzrn=0
+        ddel=0
+        dtha=0
+        dist=0
+        dr=0
+        dt=0
+        dx=0
+        dy=0
+        dxc=0
+        dyc=0
+        factr=0
+        rtan1=0
+        rtan2=0
+        r=0
+        rad=0
+        rrdd=0
+        pi=0
+        pi180=0
+        rb=0
+        rmxlim=0
+        x1=0
+        xcgnew=0
+        ycgnew=0
+        rtan=0
+
+        U = 0
+        V = 0
+        TCLON = 0
+        TCLAT = 0
+        del = 0
+        tha = 0
+        tang = 0
+        tanp = 0
+        ds = 0
+        xf = 0
+        dmmm = 0
+        disti = 0
+        rnot = 0
+        rtani = 0
+        typ1c = 0
+        typ2c = 0
+
          STATUS = NF90_INQ_VARID(UNCID, UFIELDNAME, UVARID)
          if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 118)
          STATUS = NF90_GET_VAR(UNCID, UVARID, U,
@@ -171,10 +276,6 @@ C      STORMID = '09L'
          TCTIME = BASETIME + DTIME
 
 
-         STATUS = NF90_open(VFILENAME, NF90_WRITE, VNCID)
-         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 146)
-         STATUS = NF90_INQ_VARID(VNCID, VFIELDNAME, VVARID)
-         if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 148)
          STATUS = NF90_GET_VAR(VNCID, VVARID, V,
      *                       START = (/ 1, 1, T /),
      *                       COUNT = (/ NLON, NLAT, 1 /))
@@ -268,13 +369,20 @@ C
         if (TCLON(1).lt.0) TCLON(1) = TCLON(1) + 360
         if (TCLON(2).lt.0) TCLON(2) = TCLON(2) + 360
 
-        DTIMES(1) = TCTIME - TRACKTIME(1)
-        DTIMES(2) = TRACKTIME(2) - TCTIME
+        DTIMES(1) = TCTIME % secondsSinceEpoch()
+     *            - TRACKTIME(1) % secondsSinceEpoch()
+        DTIMES(2) = TRACKTIME(2) % secondsSinceEpoch()
+     *            - TCTIME % secondsSinceEpoch()
 
+C        if (abs(dtimes(2)-dtimes(1)).gt.SIXHOURS) then
+C          cycle
+C        end if
 C     UNCOMMENT WHEN ITERATING TRACK
         IF (TCID.NE.STORMID.OR.
      *      TRACKTIME(1).GT.TCTIME.OR.
-     *      TRACKTIME(2).LT.TCTIME
+     *      TRACKTIME(2).LT.TCTIME.OR.
+     *      dtimes(2).gt.SIXHOURS.OR.
+     *      dtimes(1).gt.SIXHOURS
      *  ) THEN
            CYCLE
         END IF
@@ -318,18 +426,12 @@ C        print *, 'tclat=',tclat(2)
 C        print *, (DTIMES(1)%total_seconds())/(SIXHOURS%total_seconds())
 C        print *, 'TCTIME=', TCTIME%isoformat()
 C        print *, 'TRACKTIME(1)=', TRACKTIME(1)%isoformat()
-        XV = TCLON(1) * (1 - (DTIMES(1) % total_seconds())
-     *                     / (SIXHOURS % total_seconds())) +
-     *       TCLON(2) * (1 - (DTIMES(2) % total_seconds())
-     *                     / (SIXHOURS % total_seconds()))
+        XV = TCLON(1) * (1 - DTIMES(1)/SIXHOURS) +
+     *       TCLON(2) * (1 - DTIMES(2)/SIXHOURS)
 
-        YV = TCLAT(1) * (1 - (DTIMES(1) % total_seconds())
-     *                     / (SIXHOURS % total_seconds())) +
-     *       TCLAT(2) * (1 - (DTIMES(2) % total_seconds())
-     *                     / (SIXHOURS % total_seconds()))
+        YV = TCLAT(1) * (1 - DTIMES(1)/SIXHOURS) +
+     *       TCLAT(2) * (1 - DTIMES(2)/SIXHOURS)
 
-        print *, 'dtime=', dtimes(1)%total_seconds(),
-     *   dtimes(2)%total_seconds()
         print *, 'tclon=', tclon(1), tclon(2)
         print *, 'tclat=', tclat(1), tclat(2)
         PRINT *, 'XV=', XV
@@ -355,7 +457,7 @@ CC
 CC
 CC    FILTER IS DEFINED IN MWR PAPER OF KURIHARA, ET.ALL, 1990:
 CC
-         IFL = 1
+         IFL = 2
 CC
 CC
 CC**********************************************************
@@ -662,11 +764,12 @@ C
            DO 880 I = 1, IMX
              XXD(I,J) = UFIL(I,J) - UFILS(I,J)
 880      CONTINUE
+         print *, 'storm=', STORMID
          print *, 'T=', T
          CALL SEPAR(XXD)
          DO 890 J = 1, JMX
            DO 890 I = 1, IMX
-             UFIL(I,J)  =  UFILS(I,J)/mergefrac(lon,lat,i,j,rcls,xc,yc)+
+             UFIL(I,J) = UFILS(I,J)/mergefrac(lon,lat,i,j,rcls,xc,yc)+
      *                     mergefrac(lon,lat,i,j,rcls,xc,yc)*XXD(I,J)
 890      CONTINUE
          DO 980 J = 1 , JMX
@@ -676,7 +779,7 @@ C
          CALL SEPAR(XXD)
          DO 990 J = 1 , JMX
            DO 990 I = 1 , IMX
-             VFIL(I,J)  =  VFILS(I,J)/mergefrac(lon,lat,i,j,rcls,xc,yc)+
+             VFIL(I,J) = VFILS(I,J)/mergefrac(lon,lat,i,j,rcls,xc,yc)+
      *                     mergefrac(lon,lat,i,j,rcls,xc,yc)*XXD(I,J)
 990      CONTINUE
 
@@ -1072,9 +1175,10 @@ c
         do 22 i=1,nmx
         ro=amax1(ro,rovect(i))
 22       continue
+        ro=amin1(ro, 30.0)
 C        print*,'rovect=',rovect
 C        print*,'ro=',ro,capd2,a(1,1),a(2,1)
-        ro = ro*1.5
+C        ro = ro*1.5
           PI = 4.*ATAN(1.0)
        PI180 = 4.*ATAN(1.0)/180.
        FACT =  COS(YOLD*PI180)
@@ -1124,10 +1228,13 @@ c
         w=0.
         romax=ro
 C
-C        print *, 'ro=',ro
-C        print *, 'xold=', xold, 'yold=', yold
-C        print *, 'xc=', xc, 'yc=', yc
-C        print *, 'js=', JS, ' je=', JE
+        if (ie.gt.imx.or.je.gt.jmx.or.is.lt.1.or.js.lt.1) then
+        print *, 'ro=',ro
+        print *, 'fact=',fact
+        print *, 'xold=', xold, 'yold=', yold
+        print *, 'xc=', xc, 'yc=', yc
+        print *, 'js=', JS, ' je=', JE
+      end if
         DO 10 IX=IS,IE
         DO 11 JY=JS,JE
              ro=romax
@@ -1135,8 +1242,9 @@ c            X=XC-RO +DX*(IX-IS)
 c            Y=YC-RO +DY*(JY-JS)
 c            X= DX*float(IX)
 c            Y= DY*float(JY)
-             x=del(ix,jy)/pi180 -xcorn
-             y=tha(ix,jy)/pi180 -ycorn
+             im = modulo(ix-1, imx)+1
+             x=del(im,jy)/pi180 -xcorn
+             y=tha(im,jy)/pi180 -ycorn
               delx=(x-xc)*fact
               dely=(y-yc)
              DR=SQRT((delx)**2 +(dely)**2)
@@ -1208,10 +1316,12 @@ C        print *, 'ro=', ro, ' x=', x
         IY=NINT(Y/DY)
         IX1=IX+1
         IY1=IY+1
+        IX = MODULO(IX-1,imx) +1
+        IX1 = MODULO(IX1-1,imx) +1
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
-       XR(I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY+1)
-     1      +  (1.-Q)*P*XF(IX+1,IY) + P*Q*XF(IX+1,IY+1)
+       XR(I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY1)
+     1      +  (1.-Q)*P*XF(IX1,IY) + P*Q*XF(IX1,IY1)
 10     CONTINUE
          RETURN
          END
@@ -1248,6 +1358,7 @@ CCCCC      AFCT = 1.0E10
       DX = PI180 * (XCC - XCORN) / DDEL
       DY = PI180 * (YCC - YCORN) / DTHA
       IX = NINT(DX) + 1
+      IX = MODULO(IX-1, IMX)+1
       IY = NINT(DY) + 1
       PRINT*
       PRINT*,'(x,y) OF Corn:  ',xcorn,ycorn
@@ -1284,10 +1395,16 @@ C
 C
        II = II + 1
 C
-       DSS(II) = DS(I,J)
-       DLL(II) = DEL(I,J)
-       THH(II) = THA(I,J)
-       WIND(II) = SQRT(UP(I,J)*UP(I,J)+VP(I,J)*VP(I,J) )
+C       if (i.lt.imx) THEN
+C        print *, 'i=', i
+C        print *, 'ib=', ib
+C        print *, 'ie=', ie
+C      end if
+       IM = MODULO(I-1,IMX)+1
+       DSS(II) = DS(IM,J)
+       DLL(II) = DEL(IM,J)
+       THH(II) = THA(IM,J)
+       WIND(II) = SQRT(UP(IM,J)*UP(IM,J)+VP(IM,J)*VP(IM,J) )
 10     CONTINUE
 C
 C
@@ -1367,11 +1484,12 @@ c  compute radial profile of azimuthal avg. tang. wind at each pt
 c
         do 51 i=ist,iend
         do 51 j=jst,jend
-       xcen=(del(i,j)-del(1,1))/pi180 +1.
-       ycen=(tha(i,j)-tha(1,1))/pi180 +1.
+           IM = MODULO(I-1,IMX)+1
+       xcen=(del(im,j)-del(1,1))/pi180 +1.
+       ycen=(tha(im,j)-tha(1,1))/pi180 +1.
 C         xcen=del(i,j)/pi180 +1.
 C         ycen=tha(i,j)/pi180 +1.
-         yyo=tha(i,j)
+         yyo=tha(im,j)
            do 52 ir=1,lgth
            rbd=float(ir)*0.2
 c           print *, 'del=', del(i,j)
@@ -1438,6 +1556,8 @@ C       xcn=float(ipos/100)-1.
        xcn=float(ipos/jmx)-1.
        ixc=int(xcn)+1
        iyc=int(ycn)+1
+       ixc = modulo(ixc-1, imx)+1
+       ixc1 = modulo(ixc, imx)+1
        print *, 'xcn=', xcn
        print *, 'ycn=', ycn
          xctest=(xcn+xcorn)*pi180
@@ -1452,8 +1572,8 @@ c
       print*, 'ixc=',ixc
       print*, 'iyc=',iyc
       print*, shape(del)
-      print*, 'del=', del(ixc+1,iyc+1)
-       print*,ixc,iyc,del(ixc+1,iyc+1)/pi180,tha(ixc+1,iyc+1)/pi180
+      print*, 'del=', del(ixc1,iyc+1)
+       print*,ixc,iyc,del(ixc1,iyc+1)/pi180,tha(ixc1,iyc+1)/pi180
        do 334 j=1,jmx
        do 334 i=1,imx
         dx=(del(i,j)-xctest)*fact
@@ -3897,21 +4017,25 @@ c
         do 11 ir=1,iimx
         ro=float(ir)*deltar
         X=(RO*COS(THETA)) +XC
-        if (NINT(X).gt.360) X = X - 360
         Y=(RO*SIN(THETA)) +YC + 91.0
         X1=X+DX
-        if (NINT(X1).gt.360) X1 = X1 - 360
         Y1=Y+DY
         IX=NINT(X/DX)
         IY=NINT(Y/DY)
         IX1=NINT(X1/DX)
         IY1=NINT(Y1/DY)
+        IX = MODULO(IX-1,IMX) + 1
+        IX1 = MODULO(IX1-1,IMX) + 1
 C        IX1=IX+1
 C        IY1=IY+1
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
         if (IY.gt.jmx.or.iy1.gt.jmx) THEN
           CYCLE
+        end if
+        if (IX.lt.1) THEN
+          print *, 'ix=', ix
+          print *, 'x=', x
         end if
        XR(ir,I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY1)
      1      +  (1.-Q)*P*XF(IX1,IY) + P*Q*XF(IX1,IY1)
@@ -4012,6 +4136,8 @@ C        Y1=max(mod(Y+YC, 181.0), 1.0) - 90.0
         IY=NINT(Y/DY)
         IX1=NINT(X1/DX)
         IY1=NINT(Y1/DY)
+        IX = MODULO(IX-1,imx) +1
+        IX1 = MODULO(IX1-1,imx) +1
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
 c      XR(I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY+1)
@@ -4112,6 +4238,8 @@ C        YN=MAX(mod((R0*SIN(THETA))/(arad*pi180)+YC+90.0, 181.0), 1.0)
         IY=NINT(Y/DY)
         IX1=IX+1
         IY1=IY+1
+        IX = MODULO(IX-1,imx) +1
+        IX1 = MODULO(IX1-1,imx) +1
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
 c      ui=(1.-P)*(1.-Q)*u(IX,IY) +(1.-P)*Q*u(IX,IY+1)
