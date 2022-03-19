@@ -686,7 +686,7 @@ C
             RNOT(iang) =  R/.1
           ENDIF
 C
-           rscale = 3.0 - 2*tanh(exp(1.0)*(rcls-100)/1500)
+           rscale = 2.0 - tanh(exp(1.0)*(rcls+100)/1000)
            RZR = rscale*float(rcls)/111.19393
 C          rzr=dist
           m = 1
@@ -758,6 +758,7 @@ C     COMPONENTS
 C
 C
         print *, TCTIME % isoformat()
+        print *, "RZR=",rzr
         LONC = XC/PI180
         LATC = YC/PI180
          DO 880 J = 1, JMX
@@ -769,8 +770,8 @@ C
          CALL SEPAR(XXD)
          DO 890 J = 1, JMX
            DO 890 I = 1, IMX
-             UFIL(I,J) = UFILS(I,J)/mergefrac(lon,lat,i,j,rcls,xc,yc)+
-     *                     mergefrac(lon,lat,i,j,rcls,xc,yc)*XXD(I,J)
+             UFIL(I,J) = UFILS(I,J)+
+     *                   mergefrac(lon,lat,i,j,rzr,lonc,latc)*XXD(I,J)
 890      CONTINUE
          DO 980 J = 1 , JMX
            DO 980 I = 1 , IMX
@@ -779,8 +780,8 @@ C
          CALL SEPAR(XXD)
          DO 990 J = 1 , JMX
            DO 990 I = 1 , IMX
-             VFIL(I,J) = VFILS(I,J)/mergefrac(lon,lat,i,j,rcls,xc,yc)+
-     *                     mergefrac(lon,lat,i,j,rcls,xc,yc)*XXD(I,J)
+             VFIL(I,J) = VFILS(I,J)+
+     *                   mergefrac(lon,lat,i,j,rzr,lonc,latc)*XXD(I,J)
 990      CONTINUE
 
 C
@@ -807,8 +808,8 @@ C
       real function mergefrac(lon,lat,i,j,rcls,xc,yc)
         implicit NONE
         integer :: imx, jmx
-        integer, intent(in) :: i,j, rcls
-        real, intent(in) :: xc, yc
+        integer, intent(in) :: i,j
+        real, intent(in) :: xc, yc, rcls
         PARAMETER (IMX=360, JMX=180)
         real, dimension(imx), intent(in) :: lon
         real, dimension(jmx), intent(in) :: lat
@@ -819,7 +820,7 @@ C
         dx = dlon*111.19393
         dy = dlat*111.19393
         dr = sqrt(dx**2+dy**2)
-        mergefrac = min(dr/(4.0*rcls), 1.0)
+        mergefrac = min(dr/(10.0*rcls), 1.0)
       end function mergefrac
 
       SUBROUTINE PHASE(IFL,U,V,IMX,JMX,US,VS)
