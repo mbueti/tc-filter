@@ -813,14 +813,19 @@ C
         PARAMETER (IMX=360, JMX=180)
         real, dimension(imx), intent(in) :: lon
         real, dimension(jmx), intent(in) :: lat
-        real :: dlon, dlat, dx, dy, dr
+        real :: dlon, dlat, dx, dy, dr, b
 
         dlon = lon(i) - xc
         dlat = lat(j) - yc
         dx = dlon*111.19393
         dy = dlat*111.19393
         dr = sqrt(dx**2+dy**2)
-        mergefrac = min(dr/(10.0*rcls), 1.0)
+C        if (dr.ge.(0.5*rcls)) then
+C          mergefrac = min(dr/(10.0*rcls), 1.0)
+           mergefrac = min(1.0-(5.0*rcls-dr)/(5.0*rcls), 1.0)
+C        else
+C          mergefrac = 1.0
+C        end if
       end function mergefrac
 
       SUBROUTINE PHASE(IFL,U,V,IMX,JMX,US,VS)
@@ -4139,6 +4144,8 @@ C        Y1=max(mod(Y+YC, 181.0), 1.0) - 90.0
         IY1=NINT(Y1/DY)
         IX = MODULO(IX-1,imx) +1
         IX1 = MODULO(IX1-1,imx) +1
+        IY = MAX(IY,1)
+        IY1 = MAX(IY1,1)
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
 c      XR(I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY+1)
@@ -4213,7 +4220,8 @@ C
         rfind=r
 c
         return
-        end
+       end
+
        subroutine bound2(u,v,tanuv,r0,xc,yc,yyo)
        PARAMETER(IMX=360,JMX=180,nmx=64)
        DIMENSION u(imx,jmx),v(imx,jmx),tani(nmx)
@@ -4261,7 +4269,7 @@ c
         tanuv=tanuv +tani(i)/float(nmx)
 20      continue
          RETURN
-         END
+      END
       SUBROUTINE HANDLE_ERR(STATUS, LINE)
         INTEGER, INTENT(IN) :: STATUS, LINE
 
