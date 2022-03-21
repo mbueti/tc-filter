@@ -27,7 +27,6 @@
       INTEGER, DIMENSION(NF90_MAX_VAR_DIMS) :: dimIDs
       REAL, DIMENSION(:, :), ALLOCATABLE :: U, V
       REAL, DIMENSION(:), ALLOCATABLE :: LAT, LON, TIME
-C      real, dimension(:,:) :: del
       CHARACTER(len=220) :: UFILENAME, VFILENAME, TRACKFILENAME
       CHARACTER(len=7) :: UFIELDNAME, VFIELDNAME
       CHARACTER(len=10) :: TCNAME
@@ -3355,6 +3354,7 @@ C***FIRST EXECUTABLE STATEMENT  XERPRT
    20 CONTINUE
       RETURN
       END
+      
       SUBROUTINE H12(MODE,LPIVOT,L1,M,U,IUE,UP,C,ICE,ICV,NCV)
 C***BEGIN PROLOGUE  H12
 C***REFER TO  HFTI,LSEI,WNNLS
@@ -3467,8 +3467,9 @@ C
       CALL SSWAP(NCV,C(KL1),ICV,C(KLP),ICV)
       RETURN
       END
+
       SUBROUTINE WNLIT(W,MDW,M,N,L,IPIVOT,ITYPE,H,SCALE,RNORM,IDOPE,
-     1   DOPE,DONE)
+     *                 DOPE,DONE)
 C***BEGIN PROLOGUE  WNLIT
 C***REFER TO  WNNLS
 C
@@ -3494,12 +3495,17 @@ C     /SSCAL/DSCAL/,
 C     /SSWAP/DSWAP/,/AMAX1/DMAX1/,/ISAMAX/IDAMAX/,/.E-/.D-/,/E0/D0/
 C
 C++
+      implicit NONE
+
       REAL             W(MDW,1), H(1), SCALE(1), DOPE(4), SPARAM(5)
       REAL             ALSQ, AMAX, EANORM, FAC, FACTOR, HBAR, ONE, RN
       REAL             RNORM, SN, T, TAU, TENM3, ZERO
       REAL             AMAX1
       INTEGER ITYPE(1), IPIVOT(1), IDOPE(8)
-      INTEGER ISAMAX
+      INTEGER ISAMAX, i,i1,ic,me,mend,mep1,niv,niv1,imax,ip1,
+     *        ir, irp1, itemp, j, j1, jj, mdw, m, n, l, igo990,
+     *        igo993, igo996, jm1, jp, k, kk, krank, krp1, l1,
+     *        lb, lend, lp1, max, np1, nsoln
       LOGICAL INDEP, DONE, RECALC
       DATA TENM3 /1.E-3/, ZERO /0.E0/, ONE /1.E0/
 C
@@ -3859,6 +3865,7 @@ C     INTERCHANGES.
   590 GO TO (40, 240) IGO990
   600 GO TO (20, 190, 320) IGO996
       END
+
       INTEGER FUNCTION I1MACH(I)
 C***BEGIN PROLOGUE  I1MACH
 C***DATE WRITTEN   750101   (YYMMDD)
@@ -3935,8 +3942,12 @@ C                 SOFTWARE, VOL. 4, NO. 2, JUNE 1978, PP. 177-188.
 C***ROUTINES CALLED  (NONE)
 C***END PROLOGUE  I1MACH
 C
-      INTEGER IMACH(16),OUTPUT
-      EQUIVALENCE (IMACH(4),OUTPUT)
+      implicit none
+
+      integer, intent(in) :: i
+      INTEGER, dimension(16) :: IMACH
+      integer :: OUTPUT
+      EQUIVALENCE (IMACH(4), OUTPUT)
 C
 C     MACHINE CONSTANTS FOR THE CRAY 1, XMP, 2, AND 3.
 C     USING THE 64 BIT INTEGER COMPILER OPTION
@@ -3968,18 +3979,28 @@ C
       RETURN
 C
       END
+
        SUBROUTINE calct(deltar,xc,yc,yo,xf,rmxlim)
+         implicit none
 c
 c  calculates the radial profile for eight azimuthal angles
 c
-       real :: xv, yv
-       PARAMETER ( nmx=64)
-       PARAMETER (IMX=360 , JMX=180, iimx=100)
-       DIMENSION xf(imx,jmx)
-       dimension idst(nmx),hmax(nmx),rmax(nmx)
+       integer, PARAMETER :: nmx=64,IMX=360,JMX=180,iimx=100
+       real, intent(in) :: deltar, xc, yc, yo
+       real, intent(out) :: rmxlim
+       real :: xv, yv, arad, bfact, ddel, dtha,
+     *         ro, theta, x, x1, y, y1, pi, pi180,
+     *         p, q, dx, dy, xcorn, ycorn, xold, yold,
+     *         rmxavg, rfind, rdistl, fact, factr
+       integer :: ix, ix1, iy, iy1, i, iaa, iravg, irend,
+     *            ir, irvgu, id1, id2, mdw, m, n, l
+       real, DIMENSION(imx,jmx),intent(in) :: xf
+       integer, dimension(nmx) :: idst
+       real, dimension(nmx) :: hmax,rmax,dist
+       real, dimension(iimx,nmx) :: xr
 C
        common /scale/rmxavg,rfind
-       common /pass/xr(iimx,nmx),dist(nmx)
+       common /pass/xr,dist
        COMMON  /TOTAL/ DDEL,dtha
        COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,id1,id2
 C
@@ -4108,10 +4129,18 @@ c
 400     format(25f5.1)
          RETURN
          END
+
        SUBROUTINE calcr(RO,RTAN,xc,yc,yold,u,v)
-       PARAMETER (nmx=64)
-       PARAMETER (IMX=360 , JMX=180)
-       DIMENSION XR(NMX),u(imx,jmx),v(imx,jmx)
+         implicit NONE
+
+         integer, PARAMETER :: nmx=64, imx=260, jmx=180
+         integer :: ix, iy, ix1, iy1, i
+         real :: ddel, dtha, pi, pi180, fact, dx, dy,
+     *           theta, x, y, x1, y1, p, q
+         real, DIMENSION(nmx) :: XR(NMX)
+         real, dimension(imx,jmx), intent(in) :: u,v
+         real, intent(in) :: ro, xc, yc, yold
+         real, intent(out) :: rtan
 C
        COMMON  /TOTAL/ DDEL,dtha
 c      COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,id1,id2
@@ -4166,18 +4195,22 @@ c
 40     CONTINUE
        RTAN = RTAN/FLOAT(NMX)
          RETURN
-         END
+       END
+
         subroutine findra(dxc,dyc,yc,rmxavg,rfind,tanuv)
+          implicit none
 c
 c  finds rfind from azimuthally averaged radial profile of tang. wind
 c
-        parameter(imx=360,jmx=180,nmx=64,iimx=110)
-        dimension tanuv(iimx)
-ccc       common /scale/rmxavg,rfind
-c
+        integer, parameter :: imx=360,jmx=180,nmx=64,iimx=110
+        integer :: irad
+        real :: dist, dr, r, rtan, rtan1, rtan2, x1
+        real, intent(in) :: rmxavg, dxc, dyc, yc
+        real, dimension(iimx), intent(in) :: tanuv
+        real, intent(out) :: rfind
+
         DR=1.0
-c
-c
+
         dist= rmxavg*1.5
         X1 = 0.0
         RTAN1 = 100000.
@@ -4222,54 +4255,55 @@ c
         return
        end
 
+
        subroutine bound2(u,v,tanuv,r0,xc,yc,yyo)
-       PARAMETER(IMX=360,JMX=180,nmx=64)
-       DIMENSION u(imx,jmx),v(imx,jmx),tani(nmx)
-c       COMMON  /POSIT/ XOLD,YOLD,XCORN,YCORN,Rxx,XV,YV
-       COMMON  /TOTAL/ DDEL,dtha
-c       COMMON  /XXX/    XC,YC,DX,DY
-        PI = 4.*ATAN(1.0)
-        pi180=pi/180.
-        dx=ddel/pi180
-        dy=dtha/pi180
-        fact=cos(yyo)
-        arad=6371.
-         r0=r0*111.19
-        DO 10 I=1,NMX
-        THETA= 2.*PI*FLOAT(I-1)/FLOAT(NMX)
-        X=(R0*COS(THETA))/(arad*fact*pi180)+XC
-C        print *, yc
-C        print *, (R0*SIN(THETA))/(arad*fact *pi180)
-        Y=(R0*SIN(THETA))/(arad*pi180)+YC
-C        Y=MAX(mod((R0*SIN(THETA))/(arad*pi180)+YC+90.0, 181.0), 1.0) - 90.0
-C        YN=MAX(mod((R0*SIN(THETA))/(arad*pi180)+YC+90.0, 181.0), 1.0)
-        IX=NINT(X/DX)
-        IY=NINT(Y/DY)
-        IX1=IX+1
-        IY1=IY+1
-        IX = MODULO(IX-1,imx) +1
-        IX1 = MODULO(IX1-1,imx) +1
-        P=X/DX-FLOAT(IX)
-        Q=Y/DY-FLOAT(IY)
-c      ui=(1.-P)*(1.-Q)*u(IX,IY) +(1.-P)*Q*u(IX,IY+1)
-c    1      +  (1.-Q)*P*u(IX+1,IY) + P*Q*u(IX+1,IY+1)
-c      vi=(1.-P)*(1.-Q)*v(IX,IY) +(1.-P)*Q*v(IX,IY+1)
-c    1      +  (1.-Q)*P*v(IX+1,IY) + P*Q*v(IX+1,IY+1)
-c      tani(i)=-sin(theta)*ui +cos(theta)*vi
-       tani(i)=-sin(theta)*
-     1    ((1.-P)*(1.-Q)*u(IX,IY) +(1.-P)*Q*u(IX,IY1)
-     1      +  (1.-Q)*P*u(IX1,IY) + P*Q*u(IX1,IY1))
-     1         +cos(theta)*
-     1   ((1.-P)*(1.-Q)*v(IX,IY) +(1.-P)*Q*v(IX,IY1)
-     1      +  (1.-Q)*P*v(IX1,IY) + P*Q*v(IX1,IY1))
-10     CONTINUE
-c
-        tanuv=0.
-        do 20 i=1,nmx
-        tanuv=tanuv +tani(i)/float(nmx)
-20      continue
+         IMPLICIT NONE
+
+         integer :: imx, jmx, nmx,ix, iy, ix1, iy1,
+     *              i, j
+         real :: dx, dy, theta, p, q, pi, pi180
+         real ::  fact, x, y, arad, ddel, dtha, r
+         PARAMETER(IMX=360,JMX=180,nmx=64)
+         real, intent(out) :: tanuv
+         real, intent(in) :: r0, xc, yc, yyo
+         REAL, DIMENSION(imx, jmx), intent(in) :: u,v
+         REAL, DIMENSION(nmx) :: tani
+         COMMON  /TOTAL/ DDEL,dtha
+
+         PI = 4.*ATAN(1.0)
+         pi180=pi/180.
+         dx=ddel/pi180
+         dy=dtha/pi180
+         fact=cos(yyo)
+         arad=6371.
+         r=r0*111.19
+         DO 10 I=1,NMX
+          THETA= 2.*PI*FLOAT(I-1)/FLOAT(NMX)
+          X=(R*COS(THETA))/(arad*fact*pi180)+XC
+          Y=(R*SIN(THETA))/(arad*pi180)+YC
+          IX=NINT(X/DX)
+          IY=NINT(Y/DY)
+          IX1=IX+1
+          IY1=IY+1
+          IX = MODULO(IX-1,imx) +1
+          IX1 = MODULO(IX1-1,imx) +1
+          P=X/DX-FLOAT(IX)
+          Q=Y/DY-FLOAT(IY)
+          tani(i)=-sin(theta)*
+     1      ((1.-P)*(1.-Q)*u(IX,IY) +(1.-P)*Q*u(IX,IY1)
+     1        +  (1.-Q)*P*u(IX1,IY) + P*Q*u(IX1,IY1))
+     1           +cos(theta)*
+     1      ((1.-P)*(1.-Q)*v(IX,IY) +(1.-P)*Q*v(IX,IY1)
+     1        +  (1.-Q)*P*v(IX1,IY) + P*Q*v(IX1,IY1))
+10       CONTINUE
+
+         tanuv=0.
+         do 20 i=1,nmx
+          tanuv=tanuv +tani(i)/float(nmx)
+20       continue
          RETURN
       END
+
       SUBROUTINE HANDLE_ERR(STATUS, LINE)
         INTEGER, INTENT(IN) :: STATUS, LINE
 
