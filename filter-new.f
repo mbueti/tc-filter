@@ -1729,9 +1729,15 @@ C
 30     CONTINUE
        RETURN
        END
+
         subroutine rodist
-        real :: xv, yv
-        parameter(nmx=64)
+          implicit none
+
+        real :: xv, yv, xvect, yvect, rovect, rb, xold, yold,
+     *          xcorn, ycorn, factr, pi, pi180, yo, fact, xc, yc,
+     *          r, theta
+        integer :: nnn, ienv, ix, iy, ip
+        integer, parameter :: nmx=64
         common /vect/xvect(nmx),yvect(nmx)
        COMMON  /IFACT/NNN,rovect(nmx),RB,IENV
        COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,IX,IY
@@ -1754,9 +1760,15 @@ c
 c
         return
         end
+
         subroutine amatrix
-          real :: xv, yv
-        parameter(nmx=64)
+          implicit none
+          integer, parameter :: nmx=64
+          real :: xv, yv, capd2, a, fact, dpij, factr, pi180,
+     *            rb, rovect, xcorn, ycorn, xold, yold, xvect,
+     *            yvect, yo
+          integer :: ienv, ip, jp, ix, iy, nnn
+C          real, dimension(nmx,nmx) :: a
         common /matrix/ a(nmx,nmx),capd2
         common /vect/xvect(nmx),yvect(nmx)
        COMMON  /IFACT/NNN,rovect(nmx),RB,IENV
@@ -1775,6 +1787,7 @@ c
 100     format(5f8.4)
         return
         end
+
       SUBROUTINE WNNLS(W,MDW,ME,MA,N,L,PRGOPT,X,RNORM,MODE,IWORK,WORK)
 C***BEGIN PROLOGUE  WNNLS
 C***DATE WRITTEN   790701   (YYMMDD)
@@ -2071,9 +2084,17 @@ C     4. SLATEC COMMON MATH. LIBRARY ERROR HANDLING
 C        PACKAGE.  BY R. E. JONES.  AVAILABLE AS SANDIA
 C        TECHNICAL REPORT SAND78-1189.
 C
-      REAL              DUMMY, W(MDW,1), PRGOPT(1), X(1),  RNORM
-      REAL WORK(ME+MA+5*N)
-      INTEGER IWORK(N+ME+MA)
+      implicit NONE
+
+      integer, intent(in) :: mdw, me, ma, n, l
+      integer, intent(out) :: mode
+      REAL, dimension(me+ma+5*n), intent(out) :: WORK
+      INTEGER, dimension(N+ME+MA), intent(out) :: iwork
+      real, dimension(mdw,1), intent(in) :: W
+      real, dimension(1), intent(in) :: PRGOPT, x
+      real, intent(in) :: rnorm
+      integer :: iopt, l1, l2, l3, l4, l5, liw, lw, nerr
+      REAL :: DUMMY
 C
 C
 C***FIRST EXECUTABLE STATEMENT  WNNLS
@@ -2132,6 +2153,7 @@ C
      2 WORK(L4),WORK(L5))
       RETURN
       END
+
       SUBROUTINE XERROR(MESSG,NMESSG,NERR,LEVEL)
 C***BEGIN PROLOGUE  XERROR
 C***DATE WRITTEN   790801   (YYMMDD)
@@ -2183,6 +2205,7 @@ C***FIRST EXECUTABLE STATEMENT  XERROR
       CALL XERRWV(MESSG,NMESSG,NERR,LEVEL,0,0,0,0,0.,0.)
       RETURN
       END
+
       SUBROUTINE XERRWV(MESSG,NMESSG,NERR,LEVEL,NI,I1,I2,NR,R1,R2)
 C***BEGIN PROLOGUE  XERRWV
 C***DATE WRITTEN   800319   (YYMMDD)
@@ -2236,10 +2259,18 @@ C                 1982.
 C***ROUTINES CALLED  FDUMP,I1MACH,J4SAVE,XERABT,XERCTL,XERPRT,XERSAV,
 C                    XGETUA
 C***END PROLOGUE  XERRWV
-      CHARACTER*(*) MESSG
+      implicit NONE
+
+      integer, intent(in) :: nmessg, nerr, level, ni, i1, i2, nr
+      real, intent(in) :: r1, r2
+      CHARACTER*(*), intent(in) :: MESSG
       CHARACTER*20 LFIRST
       CHARACTER*37 FORM
-      DIMENSION LUN(5)
+      integer, DIMENSION(5) :: LUN
+      integer :: i, ifatal, iunit, junk, kdummy, kunit, lerr, lkntrl,
+     *           llevel, nunit, kount, lmessg, MAXMES, MKNTRL
+      real :: isizef, isizei
+      integer, external :: j4save, I1MACH
 C     GET FLAGS
 C***FIRST EXECUTABLE STATEMENT  XERRWV
       LKNTRL = J4SAVE(2,0,.FALSE.)
@@ -2336,6 +2367,7 @@ C     ABORT
       CALL XERABT(MESSG,LMESSG)
       RETURN
       END
+
       SUBROUTINE XERSAV(MESSG,NMESSG,NERR,LEVEL,ICOUNT)
 C***BEGIN PROLOGUE  XERSAV
 C***DATE WRITTEN   800319   (YYMMDD)
@@ -2367,10 +2399,16 @@ C                 HANDLING PACKAGE", SAND82-0800, SANDIA LABORATORIES,
 C                 1982.
 C***ROUTINES CALLED  I1MACH,S88FMT,XGETUA
 C***END PROLOGUE  XERSAV
+      implicit none
+
+      integer, intent(in) :: NMESSG, nerr, level
+      integer, intent(inout) :: icount
       INTEGER LUN(5)
-      CHARACTER*(*) MESSG
+      CHARACTER*(*), intent(in) :: MESSG
       CHARACTER*20 MESTAB(10),MES
-      DIMENSION NERTAB(10),LEVTAB(10),KOUNT(10)
+      integer, DIMENSION(10) :: NERTAB,LEVTAB,KOUNT
+      integer :: i, ii, iunit, kunit, kountx, nunit
+      integer, external :: i1mach
       SAVE MESTAB,NERTAB,LEVTAB,KOUNT,KOUNTX
 C     NEXT TWO DATA STATEMENTS ARE NECESSARY TO PROVIDE A BLANK
 C     ERROR TABLE INITIALLY
@@ -2440,6 +2478,7 @@ C     EMPTY SLOT FOUND FOR NEW MESSAGE
          ICOUNT = 1
          RETURN
       END
+
       SUBROUTINE XGETUA(IUNITA,N)
 C***BEGIN PROLOGUE  XGETUA
 C***DATE WRITTEN   790801   (YYMMDD)
@@ -2486,6 +2525,7 @@ C***FIRST EXECUTABLE STATEMENT  XGETUA
    30 CONTINUE
       RETURN
       END
+
       SUBROUTINE FDUMP
 C***BEGIN PROLOGUE  FDUMP
 C***DATE WRITTEN   790801   (YYMMDD)
@@ -2510,7 +2550,8 @@ C***END PROLOGUE  FDUMP
 C***FIRST EXECUTABLE STATEMENT  FDUMP
       RETURN
       END
-      FUNCTION J4SAVE(IWHICH,IVALUE,ISET)
+
+      integer FUNCTION J4SAVE(IWHICH,IVALUE,ISET)
 C***BEGIN PROLOGUE  J4SAVE
 C***REFER TO  XERROR
 C     Abstract
@@ -2550,7 +2591,10 @@ C                 HANDLING PACKAGE", SAND82-0800, SANDIA LABORATORIES,
 C                 1982.
 C***ROUTINES CALLED  (NONE)
 C***END PROLOGUE  J4SAVE
-      LOGICAL ISET
+      implicit none
+
+      integer, intent(in) :: iwhich, ivalue
+      LOGICAL, intent(in) :: ISET
       INTEGER IPARAM(9)
       SAVE IPARAM
       DATA IPARAM(1),IPARAM(2),IPARAM(3),IPARAM(4)/0,2,0,10/
@@ -2561,6 +2605,7 @@ C***FIRST EXECUTABLE STATEMENT  J4SAVE
       IF (ISET) IPARAM(IWHICH) = IVALUE
       RETURN
       END
+
       SUBROUTINE WNLSM(W,MDW,MME,MA,N,L,PRGOPT,X,RNORM,MODE,IPIVOT,
      1   ITYPE,WD,H,SCALE,Z,TEMP,D)
 C***BEGIN PROLOGUE  WNLSM
@@ -2630,6 +2675,16 @@ C
 C     SUBROUTINE WNLSM (W,MDW,MME,MA,N,L,PRGOPT,X,RNORM,MODE,
 C    1                  IPIVOT,ITYPE,WD,H,SCALE,Z,TEMP,D)
 C++
+      implicit none
+
+      integer, intent(in) :: mdw, n, l, mme, ma
+      integer, intent(inout) :: mode
+      integer :: i, igo897, igo938, igo958, igo977, igo980, igo983,
+     *           igo986, igo991, igo995, igo998, imax, iopt, isol,
+     *           itemp, iter, itmax, iwmax, j, jcon, jj, jm1, jp, l1,
+     *           key, krank, krp1, last, link, lp1, m, me, mep1, nerr,
+     *           next, niv, niv1, nlink, ntimes, nsp1, nsoln, np1,
+     *           nopt, nm1
       REAL             W(MDW,N), X(1), WD(1), H(1), SCALE(1), DOPE(4)
       REAL             Z(1), TEMP(1), PRGOPT(1), D(N), SPARAM(5)
       REAL             ALAMDA, ALPHA, ALSQ, AMAX, BNORM, EANORM
@@ -3320,6 +3375,7 @@ C***END PROLOGUE  XERCTL
 C***FIRST EXECUTABLE STATEMENT  XERCTL
       RETURN
       END
+
       SUBROUTINE XERPRT(MESSG,NMESSG)
 C***BEGIN PROLOGUE  XERPRT
 C***DATE WRITTEN   790801   (YYMMDD)
@@ -3338,8 +3394,13 @@ C                 HANDLING PACKAGE", SAND82-0800, SANDIA LABORATORIES,
 C                 1982.
 C***ROUTINES CALLED  I1MACH,S88FMT,XGETUA
 C***END PROLOGUE  XERPRT
-      INTEGER LUN(5)
-      CHARACTER*(*) MESSG
+      implicit NONE
+
+      CHARACTER*(*), intent(in) :: MESSG
+      integer, intent(in) :: NMESSG
+      INTEGER, dimension(5) :: LUN
+      integer, external :: i1mach
+      integer :: ichar, iunit, kunit, last, lenmes, nunit
 C     OBTAIN UNIT NUMBERS AND WRITE LINE TO EACH UNIT
 C***FIRST EXECUTABLE STATEMENT  XERPRT
       CALL XGETUA(LUN,NUNIT)
@@ -3354,7 +3415,7 @@ C***FIRST EXECUTABLE STATEMENT  XERPRT
    20 CONTINUE
       RETURN
       END
-      
+
       SUBROUTINE H12(MODE,LPIVOT,L1,M,U,IUE,UP,C,ICE,ICV,NCV)
 C***BEGIN PROLOGUE  H12
 C***REFER TO  HFTI,LSEI,WNNLS
@@ -3395,7 +3456,18 @@ C     NCV    Number of vectors in C() to be transformed. If NCV .LE. 0
 C            no operations will be done on C().
 C***ROUTINES CALLED  SAXPY,SDOT,SSWAP
 C***END PROLOGUE  H12
-      DIMENSION U(IUE,M), C(1)
+      implicit none
+
+      integer, intent(in) :: mode, lpivot, l1, m, iue, ice,
+     *                       icv, ncv
+      real, intent(inout) :: up
+      real, dimension(iue,m),intent(inout) :: u
+      real, dimension(1), intent(inout) :: C
+      real, external :: sdot
+      real :: one, b, cl, clinv, sm, ul1m1
+      integer :: i, j, i2, i3, i4, incr, kl1, kl2, klp, im1,
+     *           mml1p2, l1m1
+C      DIMENSION U(IUE,M), C(1)
 C***FIRST EXECUTABLE STATEMENT  H12
       ONE=1.
 C
