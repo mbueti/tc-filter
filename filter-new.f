@@ -830,8 +830,7 @@ C        end if
       SUBROUTINE PHASE(IFL,U,V,IMX,JMX,US,VS)
         implicit none
         integer, intent(in) :: ifl, imx, jmx
-        integer :: nx
-      PARAMETER  (NX=25)
+        integer, PARAMETER :: NX=25
 CC************************************************************************
 CC                                                                       *
 CC     THIS SUBROUTINE CREATES  FILTERED  FIELDS OF (U,V) WIND           *
@@ -1141,30 +1140,40 @@ CC
 CC
 CC
         END
+
       SUBROUTINE SEPAR(XD)
 C
 C  SEPERATES A FIELD INTO HURRICANE COMPONENT AND REMAINDER
 C
-
-       integer :: ix, iy
-       real :: xv, yv, xold, yold, xcorn, ycorn
-       PARAMETER( NMX=64,nmx1=nmx+1,nmx2=nmx*2,nmx6=nmx*6)
-       PARAMETER (IMX=360 , JMX=180)
-       DIMENSION XR(NMX),XD(IMX,JMX)
+       implicit NONE
+       integer, PARAMETER :: NMX=64,nmx1=nmx+1,nmx2=nmx*2,nmx6=nmx*6
+       integer, PARAMETER :: IMX=360 , JMX=180
+       real, dimension(imx, jmx), intent(inout) :: xd
+       integer :: ix, iy, i, ie, ienv, im, ip, is, j, je, js, jy, jp,
+     *            n1, n2, nnn, md
+       real :: xv, yv, xold, yold, xcorn, ycorn, capd2, ddel, dtha,
+     *         delth, delx, dely, dr, dpij, ro, romax, temp, x, y,
+     *         dx, dy, fact, factr, pi, pi180, theta, xc, yc, xro,
+     *         rb, rnm
+       real, dimension(nmx) :: xr
+       real, dimension(nmx,nmx) :: a
+       real, dimension(nmx,nmx1) :: ab
+       real, dimension(nmx) :: b, w, xvect, yvect, rovect
+       integer, dimension(nmx) :: ipvt
+       real, dimension(121) :: wrk
+       integer, dimension(25) :: iwrk
+       real, dimension(imx, jmx) :: del, tha, tanp, ds, tang, xf
+       real, dimension(imx, jmx, 2) :: dmmm
 CC
-       COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),
-     *      DEL(IMX,JMX),THA(IMX,JMX),TANP(IMX,JMX),DS(IMX,JMX)
+       COMMON /WINDS/ DMMM,TANG,DEL,THA,TANP,DS
        COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,IX,IY
-       COMMON  /IFACT/NNN,rovect(nmx),RB,IENV
-       COMMON /XXX/  XF(IMX,JMX),XC,YC,DX,DY
+       COMMON  /IFACT/NNN,rovect,RB,IENV
+       COMMON /XXX/  XF,XC,YC,DX,DY
        COMMON /TOTAL/ DDEL,DTHA
 C
 c new arrays
-        dimension b(nmx),w(nmx),ab(nmx,nmx1),ipvt(nmx)
-     1       ,wrk(121),iwrk(25)
-c     1       ,wrk(nmx6),iwrk(nmx2)
-        common /matrix/ a(nmx,nmx),capd2
-        common /vect/xvect(nmx),yvect(nmx)
+        common /matrix/ a,capd2
+        common /vect/xvect,yvect
 c
         DATA XR/64*0./
 C
@@ -1299,17 +1308,22 @@ c            xh(ix,jy)=xf(ix,jy)-temp
 10     CONTINUE
        RETURN
        END
+
         SUBROUTINE BOUND(NMX,XR,ro)
 C
-        real :: xv, yv
-        PARAMETER (IMX=360 , JMX=180)
+        implicit none
+        integer, PARAMETER :: IMX=360, JMX=180
+        integer, intent(in) :: nmx
+        real, dimension(nmx), intent(in) :: ro
+        real, dimension(nmx), intent(out) :: xr
+        real :: xv, yv, xc, yc, dx, dy, xold, yold, xcorn,
+     *          ycorn, factr, pi, fact, theta, x, y, p, q
+        integer :: ix, iy, ix1, iy1, i
+        real, dimension(imx, jmx) :: xf
 C
-        DIMENSION XR(NMX),ro(nmx)
-c       COMMON  /IFACT/NNN,RO(nmx),RB,IENV
-        COMMON  /XXX/  XF(IMX,JMX),XC,YC,DX,DY
+        COMMON  /XXX/  XF,XC,YC,DX,DY
         COMMON /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,IX,IY
-C       COMMON  /COOR/ XV,YV,XOLD,YOLD
-c       COMMON  /POSIT/ XOLD,YOLD
+
         PI = 4.*ATAN(1.0)
         fact=cos(yold*pi/180.)
         DO 10 I=1,NMX
