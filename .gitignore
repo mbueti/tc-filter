@@ -7,3 +7,4 @@ fort.*
 syndat_tcvitals.*
 *.o
 *.mod
+.vscode

@@ -13,7 +13,12 @@
     COMMON /TOTAL/ DDEL,DTHA
 !
 ! new arrays
-    dimension b(nmx),w(nmx),ab(nmx,nmx1),ipvt(nmx),wrk(nmx6),iwrk(nmx2)
+    real(kind=16), dimension(nmx) :: b
+    real, dimension(nmx) :: w, ipvt
+    real(kind=16), dimension(nmx,nmx1) :: ab
+    real(kind=16), dimension(nmx6) :: wrk
+    integer, dimension(nmx2) :: iwrk 
+    real(kind=16) dpij
     common /matrix/ a(nmx,nmx),capd2
     common /vect/xvect(nmx),yvect(nmx)
 !
@@ -31,7 +36,7 @@
     do 22 i=1,nmx
       ro=amax1(ro,rovect(i))
 22  continue
-    print*,'ro=',ro,capd2,a(1,1),a(2,1)
+    ! print*,'ro=',ro,capd2,a(1,1),a(2,1)
     FACT = COS(YOLD*PI180)
 !C
 !C   XC IS THE I POSITION OF THE CENTER OF THE OLD VORTEX
@@ -52,6 +57,11 @@
     IE=INT((XC+RO/fact)/DX + 1.)
     JS=INT((YC-RO)/DY) +1.
     JE=INT((YC+RO)/DY + 1.)
+
+    IS=MAX(IS,1)
+    JS=MAX(JS,1)
+    IE=MIN(IE,IMX)
+    JE=MIN(JE,JMX)
 !
     DO J = 1 , JMX
       DO I = 1 , IMX
@@ -63,9 +73,9 @@
 !         BILINEAR INTERPOLATION
 !
 !
-    Print*, 'calling BOUND from SEPAR '
+    ! Print*, 'calling BOUND from SEPAR '
     CALL BOUND(NMX,XR,rovect)
-    print*,'here is rovect ',rovect
+    ! print*,'here is rovect ',rovect
 !
 !  xrop(nmx) are the interpolated values of the disturbance
 !   field at the rovect pts
@@ -79,6 +89,10 @@
     w=0.
     romax=ro
 !
+    !print *, "IS=",IS
+    !print *, "IE=",IE
+    !print *, "JS=",JS
+    !print *, "JE=",JE
     DO 10 IX=IS,IE
       DO 11 JY=JS,JE
         ro=romax
@@ -107,24 +121,30 @@
         ro=delth*float(nmx)/(2.*pi)*(rovect(n2)-rovect(n1+1))+rovect(n1+1)
         IF(DR.GT.ro)GOTO11
         XRO=DELTH*FLOAT(NMX)/(2.*PI)*(XR(N2)-XR(N1+1)) +XR(N1+1)
-        print *, 'XRO=', XRO
+        ! print *, 'XRO=', XRO
 !
 ! Now add new code to compute distance from each gridpt. to rovect pts
 !
         do 12 ip=1,nmx
           dpij= (fact*(x-xvect(ip)))**2 +(y-yvect(ip))**2
-          print *, 'ip=', ip
-          print *, 'dpij=', dpij
-          print *, 'capd2=', capd2
-          print *, -dpij/capd2
+          ! print *, 'ip=', ip
+          ! print *, 'dpij=', dpij
+          ! print *, 'capd2=', capd2
+          ! print *, -dpij/capd2
+          ! print *, exp(-99.8140106)
           if (dpij/capd2 > 100) then
             b(ip) = 0
           else
+            ! print *, 'dpij=',dpij
+            ! print *, 'capd2=',capd2
+            ! print *, 'b(ip)=', b(ip)
+            ! print *, -dpij/capd2
+            
             b(ip) = exp(-dpij/capd2)
           endif
-          print *, 'b(ip)=', b(ip)
+          ! print *, 'b(ip)=', b(ip)
 12      continue
-        print *, 'b=', b
+        ! print *, 'b=', b
 !
 !
         do 44 ip=1,nmx
@@ -133,7 +153,7 @@
 43        continue
           ab(ip,nmx1)=b(ip)
 44      continue
-        print *, 'ab=', ab
+        ! print *, 'ab=', ab
 !
 !  solve system using constrained least squares method
 !

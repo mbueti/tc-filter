@@ -16,11 +16,27 @@
       Y=RO(i)*SIN(THETA)+YC +1.
       IX=INT(X/DX)
       IY=INT(Y/DY)
+      ! print *,'IX=',IX
+      ! print *,'IY=',IY
+      if(IX.le.0) IX=IX+IMX
+      if(IX.gt.IMX) IX=MOD(IX,IMX)+1
+      if(IY.le.0) IY=IY+JMX
+      if(IY.gt.JMX) IY=MOD(IY,JMX)+1
+      ! print *,'IX1=',IX1
+      ! print *,'IY1=',IY1
+
       IX1=IX+1
       IY1=IY+1
+      
+      if(IX1.gt.IMX) IX1=MOD(IX1,IMX)+1
+      if(IY1.gt.JMX) IY1=MOD(IY1,JMX)+1
+      !print *,'IX=',IX
+      !print *,'IY=',IY
+      !print *,'IX1=',IX1
+      ! print *,'IY1=',IY1
       P=X/DX-FLOAT(IX)
       Q=Y/DY-FLOAT(IY)
-      XR(I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY+1)+(1.-Q)*P*XF(IX+1,IY) + P*Q*XF(IX+1,IY+1)
+      XR(I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY1)+(1.-Q)*P*XF(IX1,IY) + P*Q*XF(IX1,IY1)
 10  CONTINUE
     RETURN
   END SUBROUTINE BOUND

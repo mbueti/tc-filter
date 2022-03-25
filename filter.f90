@@ -8,8 +8,9 @@
                NLON, NLAT, NTIME, TRACKREAD, &
                TCDATE, TCHOUR, STORMDAYS, STORMHOUR, STORMMIN, &
                TRACKYEAR, TRACKMONTH, TRACKDAY, TRACKHOUR, &
-               TRACKMIN, I, ITC, T, NTC, trackcount
-    LOGICAL :: END
+               TRACKMIN, I, ITC, T, NTC, trackcount, ENDREAD
+     REAL :: tp1,tp2
+    LOGICAL :: CYCLED
     REAL, DIMENSION(2) :: TCLAT, TCLON
     INTEGER, DIMENSION(NF90_MAX_VAR_DIMS) :: dimIDs
     REAL, DIMENSION(:, :), ALLOCATABLE :: U, V
@@ -21,7 +22,8 @@
     CHARACTER(len=3) :: TCID, STORMID
     CHARACTER(len=8) :: DATESTRING
     CHARACTER(len=1), DIMENSION(2) :: TCNS, TCEW
-    CHARACTER(len=3), DIMENSION(200) :: TCIDS
+    CHARACTER(len=3), DIMENSION(:), ALLOCATABLE :: TCIDS, TCIDS_TMP
+    
 
     TYPE(datetime), DIMENSION(2) :: TRACKTIME
     TYPE(datetime) :: BASETIME, TCTIME
@@ -64,6 +66,7 @@
 
     trackcount = 0
 
+
     BASETIME = datetime(1900, 1, 1, 0, 0, 0)
     SIXHOURS = timedelta(0, 6, 0, 0, 0)
     STATUS = NF90_OPEN(path=UFILENAME, mode=NF90_WRITE, ncid=UNCID)
@@ -95,32 +98,30 @@
 !      *        1x,i2,1x,I3,1x,I4,1x,I4,1x,I4,1x,I4,1x,I4,
 !      *        1x,I4,1x,I4,1x,I4)
     OPEN(TRACKREAD, file=TRACKFILENAME, status='old')
-    END = .FALSE.
+    CYCLED = .FALSE.
     NTCID = 0
-    DO WHILE (.NOT.END)
-      END = .TRUE.
-      READ(TRACKREAD, 17, END=13) TCORG, TCID
-      IF (NTCID.EQ.0) THEN
-        GO TO 11
-      END IF
-      DO I=1, NTCID 
-        IF (TCIDS(I).EQ.TCID) THEN
-          GO TO 12
-        END IF
-      END DO
-11    TCIDS(NTCID + 1) = TCID
-      NTCID = NTCID + 1
-12    END = .FALSE.
-13    CONTINUE
+    ENDREAD = 0
+    allocate(tcids(200))
+    DO WHILE (ENDREAD.eq.0)
+      READ(TRACKREAD, 17, iostat=ENDREAD) TCORG, TCID
+      if (all(tcids /= tcid).and.(tcid /= '000')) then
+        TCIDS(NTCID + 1) = TCID
+        NTCID = NTCID + 1
+      end if
     END DO
     CLOSE(TRACKREAD)
 
+    allocate(tcids_tmp(ntcid))
+    tcids_tmp=tcids(:ntcid)
+    call move_alloc(tcids_tmp, tcids)
 
-!   DO ITC=1, NTCID
-!   STORMID = TCIDS(ITC)
-    STORMID = '08L'
-    DO T=1, NTIME
-    !  T = 2381
+    DO ITC=1, NTCID
+      STORMID = TCIDS(ITC)
+!     print *, 'ntime=',ntime
+!     DO T=1,NTIME
+      T = 1911
+      CYCLED = .FALSE.
+      
       STATUS = NF90_INQ_VARID(UNCID, UFIELDNAME, UVARID)
       if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 125)
       STATUS = NF90_GET_VAR(UNCID, UVARID, U, &
@@ -139,13 +140,6 @@
       if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 139)
       STATUS = NF90_GET_VAR(UNCID, TIMEVARID, TIME)
 
-      STORMDAYS = FLOOR(TIME(T))
-      STORMHOUR = FLOOR(12 * (TIME(T) - STORMDAYS))
-      STORMMIN = FLOOR(60 * (12 * (TIME(T) - STORMDAYS) - STORMHOUR))
-
-      DTIME = timedelta(STORMDAYS, STORMHOUR, STORMMIN, 0, 0)
-      TCTIME = BASETIME + DTIME
-
       STATUS = NF90_open(VFILENAME, NF90_WRITE, VNCID)
       if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 153)
       STATUS = NF90_INQ_VARID(VNCID, VFIELDNAME, VVARID)
@@ -154,6 +148,13 @@
                             START = (/ 1, 1, T /), &
                             COUNT = (/ NLON, NLAT, 1 /))
       if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 159)
+
+      STORMDAYS = FLOOR(TIME(T))
+      STORMHOUR = FLOOR(12 * (TIME(T) - STORMDAYS))
+      STORMMIN = FLOOR(60 * (12 * (TIME(T) - STORMDAYS) - STORMHOUR))
+
+      DTIME = timedelta(STORMDAYS, STORMHOUR, STORMMIN, 0, 0)
+      TCTIME = BASETIME + DTIME
 
 !      READ (10)NSTEP,NNEST,IBLOCK 
 ! 
@@ -213,14 +214,14 @@
       TRACKTIME(1) = BASETIME
       TRACKTIME(2) = BASETIME
       TCID = ''
-      END = .FALSE.
+      ENDREAD = 0
       DO WHILE ( &
 !      *    (STORMID.NE.TCID.OR.
                 ((TRACKTIME(2)).LT.TCTIME.OR. &
-                 (TRACKTIME(1)).EQ.BASETIME).AND. &
-                .NOT.END &
+                 (TRACKTIME(1)).EQ.BASETIME).and. &
+                 ENDREAD.eq.0 &
                ) 
-        END = .TRUE.
+      !   ENDREAD = .TRUE.
       !     print * , 'STORMID=',STORMID
         IF (TCID.EQ.STORMID) THEN
           TCLAT(1) = TCLAT(2)
@@ -230,7 +231,7 @@
           TRACKTIME(1) = TRACKTIME(2)
         END IF
 
-        READ(TRACKREAD, 17, END=16) TCORG, TCID, TCNAME, TRACKYEAR, &
+        READ(TRACKREAD, 17, END=16, iostat=ENDREAD) TCORG, TCID, TCNAME, TRACKYEAR, &
                                     TRACKMONTH, TRACKDAY, TRACKHOUR, TRACKMIN, &
                                     TCLAT(2), TCNS(2), TCLON(2), TCEW(2)
         if (TRACKYEAR < 50) then
@@ -239,18 +240,27 @@
           TRACKYEAR = TRACKYEAR + 1900
         end if
         TRACKTIME(2) = datetime(TRACKYEAR, TRACKMONTH, TRACKDAY, TRACKHOUR, TRACKMIN, 0)
-        END=.FALSE.
+      !   ENDREAD=.FALSE.
 16      CONTINUE
       END DO
       CLOSE(TRACKREAD)
 
+      ! print *, 'T1=',T
       DTIMES(1) = TCTIME - TRACKTIME(1)
       DTIMES(2) = TRACKTIME(2) - TCTIME
+      print *, tracktime(1)%isoformat()
+      print *, tracktime(2)%isoformat()
+      tp1 = DTIMES(1)%total_seconds()
+      tp2 = DTIMES(2)%total_seconds()
       if ((DTIMES(1)%total_seconds()).lt.0 &
-          .or.(DTIMES(2)%total_seconds()).lt.0) cycle
-
+          .or.(DTIMES(2)%total_seconds()).lt.0) then
+            CYCLED = .TRUE.
+            ! cycle
+          end if
       trackcount = trackcount + 1
-      if (trackcount < 5) cycle
+      ! if (trackcount < 5) then
+      !       cycle
+      ! end if
    
 !       IF (TCID.NE.STORMID.OR.
 !    *      TRACKTIME(1).GT.TCTIME.OR.
@@ -281,11 +291,11 @@
         END IF
       END DO
 
-      print *, 'dt1=', DTIMES(1) % total_seconds()
-      print *, 'dt2=', DTIMES(2) % total_seconds()
+      ! print *, 'dt1=', DTIMES(1) % total_seconds()
+      ! print *, 'dt2=', DTIMES(2) % total_seconds()
 
-      print *,'dt1=',(1 - ((DTIMES(1) % total_seconds())/(SIXHOURS % total_seconds())))
-      print *,'dt2=',(1 - (DTIMES(2) % total_seconds())/(SIXHOURS % total_seconds()))
+      ! print *,'dt1=',(1 - ((DTIMES(1) % total_seconds())/(SIXHOURS % total_seconds())))
+      ! print *,'dt2=',(1 - (DTIMES(2) % total_seconds())/(SIXHOURS % total_seconds()))
 
       XV = TCLON(1) * (1 - (DTIMES(1) % total_seconds()) / (SIXHOURS % total_seconds())) + &
            TCLON(2) * (1 - (DTIMES(2) % total_seconds()) / (SIXHOURS % total_seconds())) 
@@ -293,12 +303,15 @@
       YV = TCLAT(1) * (1 - (DTIMES(1) % total_seconds()) / (SIXHOURS % total_seconds())) + &
            TCLAT(2) * (1 - (DTIMES(2) % total_seconds()) / (SIXHOURS % total_seconds()))
 
-      PRINT *, 'XV=', XV
-      PRINT *, 'YV=', YV
-!   
+      
       IF (XV.LT.0) THEN
         XV = 360. + XV
       ENDIF
+
+      ! print *, 'T=', T
+      ! PRINT *, 'XV=', XV
+      ! PRINT *, 'YV=', YV
+!   
 !
 !C****************SET UP THE FILTER STRENGTH YOU WANT***************
 !
@@ -463,8 +476,12 @@
 !
       PRINT*,'before maxth', xold,yold
       CALL MAXTH(up,vp,xcgnew,ycgnew,rmxlim,tanp)
+      print *, 'xcgnew=',xcgnew
+      print *, 'ycgnew=',ycgnew
       xold = xcgnew+xcorn
       yold = ycgnew+ycorn
+      print *, 'xold=',xold
+      print *, 'yold=',yold
       dist = rmxlim
 !   
       xcp = xold*pi180
@@ -479,25 +496,28 @@
 !  loop over nmx azimuthal directions
 !   first compute the radial profiles of tangential wind for the
 !   NMX  azimuthal angles
-!
-      dxc=xold -xcorn 
-      dyc=yold -ycorn
-      print*,'berore calct',dxc,dyc,ycp
+!:qa
+      
+      dxc=xold-xcorn 
+      dyc=yold-ycorn
+      ! print*,'before calct',dxc,dyc,ycp
 !
 !
 !    CALCULATE THE RADIAL PROFILE OF TANGENTIAL WIND FOR 24 AXUMUTHAL 
 !    ANGELS
 !
       call calct(dr,dxc,dyc,ycp,tanp,rmxlim)
+      ! print *, 'after calct'
 !
 !          
-      print *, 'nmx=', nmx
-      DO 10 iang=1, nmx
+      ! print *, 'nmx=', nmx
+      DO iang=1,nmx
         X1 = 0.0
         RTAN1 = 100000.
         R = 1.0
         dist=disti(iang)
-        print *, 'disti=',disti
+      !   print *, 'foo'
+      !   print *, 'disti=',disti
 !
 !  only return to 666 if rtan > 6m/s
 !
@@ -526,7 +546,7 @@
         RTAN1 = RTAN -4.0
         IF(R.LT.10.8)GO TO 777
 999     CONTINUE 
-        print *, 999
+      !   print *, 999
 !       PRINT*
 !   
 !   
@@ -540,11 +560,13 @@
         rzr=dist
 1999    CONTINUE
         RZR = RZR + DR
+      !   print *, 'rtan=', rtan
         CALL CALCRa(RZR,RTAN,iang)
-        irdex=min(floor(rzr/dr), 110)
-        rtan = rtani(irdex,iang)
-        print *, 'rtan=', rtan
+      !   print *, 'rtan=', rtan
+      !   irdex=min(floor(rzr/dr), 110)
+      !   rtan = rtani(irdex,iang)
         IF (RTAN.GT.0.0) GO TO 1999
+      !   print *, 'past 1999'
 !   
         RZRN = RZR
         RZR = RZR*111.19493
@@ -556,16 +578,16 @@
         RRDD = RNOT(iang)*111.19493
 !   
         IF(RRDD.GT.RZR)THEN
-          PRINT*
-          PRINT*,'RNOT HAS A NEGATIVE TANGENTIAL COMPONENT' 
-          PRINT*,'RNOT WAS DEFINED AS:  ',RRDD
-          PRINT*,'RNOT WILL BE MODIFIED' 
+          !PRINT*
+          !PRINT*,'RNOT HAS A NEGATIVE TANGENTIAL COMPONENT' 
+          !PRINT*,'RNOT WAS DEFINED AS:  ',RRDD
+          !PRINT*,'RNOT WILL BE MODIFIED' 
           RRDD = RZR
           RNOT(iang) = RZRN
         ENDIF
 !   
-        PRINT*,'THIS IS RO IN KM:  ',RRDD
-10    CONTINUE
+      !   PRINT*,'THIS IS RO IN KM:  ',RRDD
+      END DO
 !
 !
 !
@@ -576,6 +598,7 @@
 !
 !      DO THE OPTIMUM INTERPOLATION......>>>>>
 !
+      ! print *, 'calling rodist'
       call rodist
 !
 !
@@ -595,20 +618,20 @@
 !            DO 880 I = 1, IMX
 !              XXD(I,J) = UFIL(I,J) - UFILS(I,J)
 ! 880      CONTINUE
-      XXD = UFIL - UFILS
-      CALL SEPAR(XXD)
-      UFIL = UFILS + XXD
+      ! XXD = UFIL - UFILS
+      ! CALL SEPAR(XXD)
+      ! UFIL = UFILS + XXD
 !          DO 890 J = 1, JMX
 !            DO 890 I = 1, IMX
 !              UFIL(I,J)  =  UFILS(I,J) +  XXD(I,J)
 ! 890      CONTINUE
-      YYD = VFIL - VFILS
+      ! YYD = VFIL - VFILS
 !          DO 980 J = 1 , JMX
 !            DO 980 I = 1 , IMX
 !              XXD(I,J) = VFIL(I,J) - VFILS(I,J)
 ! 980      CONTINUE
-      CALL SEPAR(YYD)
-      VFIL = VFILS + YYD
+      ! CALL SEPAR(YYD)
+      ! VFIL = VFILS + YYD
 !          DO 990 J = 1 , JMX
 !            DO 990 I = 1 , IMX
 !              VFIL(I,J)  =  VFILS(I,J) +  XXD(I,J)
@@ -618,7 +641,6 @@
 !
 !      PUT THE ENVIRONMENTAL WINDS INTO THE GFDL HISTROY TAPE 
 !   
-      print *, 'T=', T
       STATUS = NF90_PUT_VAR(UNCID, UVARID, UFIL, &
                             START = (/ 1, 1, T /), &
                             COUNT = (/ NLON, NLAT, 1 /)) 
@@ -627,11 +649,20 @@
                             START = (/ 1, 1, T /), &
                             COUNT = (/ NLON, NLAT, 1 /))
       if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 622)
+      print *, 'ntime=',ntime
+      print *, 'T=',T
+      print *, 'dtimes1=',DTIMES(1)%total_seconds()
+      print *, 'dtimes2=',DTIMES(2)%total_seconds()
+      print *, 'tracktime1=',TRACKTIME(1)%strftime('%m/%d/%y %H:%M')
+      print *, 'tracktime2=',TRACKTIME(2)%strftime('%m/%d/%y %H:%M')
+      print *, 'tctime=',TCTIME%strftime('%m/%d/%y %H:%M')
+      print *, 'basetime=',BASETIME%strftime('%m/%d/%y %H:%M')
+      print *, 'ntime=',NTIME
+      print *, 'cycled=',cycled
     END DO
-!       END DO
     STATUS = NF90_CLOSE(UNCID)
     if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 626)
     STATUS = NF90_CLOSE(VNCID)
     if(STATUS /= NF90_NOERR) call HANDLE_ERR(STATUS, 628)
-      !   STOP 'stopped'
+!     STOP 'stopped'
   END PROGRAM FILTER

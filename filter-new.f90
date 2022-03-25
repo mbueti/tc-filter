@@ -27,7 +27,7 @@
       TYPE(timedelta) :: DTIME, SIXHOURS
       TYPE(timedelta), DIMENSION(2) :: DTIMES
 
-      PARAMETER (IMX=640, JMX=320, nmx=24)
+      PARAMETER (IMX=360, JMX=180, nmx=24)
       PARAMETER (KMAX=18,LGI=20 ,iimx=110)
       PARAMETER (IBLKMX=LGI*IMX+4*KMAX*IMX)
       PARAMETER (JBLKMX=IMX+14*KMAX*IMX)
@@ -980,7 +980,7 @@ C  SEPERATES A FIELD INTO HURRICANE COMPONENT AND REMAINDER
 C
  
        PARAMETER( NMX=24,nmx1=nmx+1,nmx2=nmx*2,nmx6=nmx*6)
-       PARAMETER (IMX=640 , JMX=320)
+       PARAMETER (IMX=360 , JMX=180)
        DIMENSION XR(NMX),XD(IMX,JMX)
 CC
        COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),
@@ -1119,7 +1119,7 @@ c            xh(ix,jy)=xf(ix,jy)-temp
        END
         SUBROUTINE BOUND(NMX,XR,ro)
 C 
-        PARAMETER (IMX=640 , JMX=320)
+        PARAMETER (IMX=360 , JMX=180)
 C 
         DIMENSION XR(NMX),ro(nmx)
 c       COMMON  /IFACT/NNN,RO(nmx),RB,IENV
@@ -1146,7 +1146,7 @@ c       COMMON  /POSIT/ XOLD,YOLD
          END
        SUBROUTINE CENTER(UP,VP,DELG,THAG)
 CC
-       PARAMETER (IMX=640 , JMX=320, nmx=24)
+       PARAMETER (IMX=360 , JMX=180, nmx=24)
 CC     PARAMETER  (IMX=75, JMX=75)
        PARAMETER  ( KMAX=18,  LGI=20 )
        PARAMETER  (IGL = 500)
@@ -1262,7 +1262,7 @@ C
       RETURN
       END  
       SUBROUTINE maxth(dumu,dumv,dxc,dyc,rmxlim,tw)
-        parameter(nmx=8,imx=640,jmx=320,lgth=30,iimx=110)
+        parameter(nmx=8,imx=360,jmx=180,lgth=30,iimx=110)
         dimension dumu(imx,jmx),dumv(imx,jmx),tw(imx,jmx)
         dimension th(imx,jmx),tanmx(imx,jmx),tprof(7,7,lgth)
      1      ,itpos(7,7),tmax(7,7),tanavg(iimx)
@@ -1408,7 +1408,7 @@ c
         end
        SUBROUTINE CALCRa(RO,RTAN,iang,dist)
        PARAMETER ( NMX=24)
-       PARAMETER (IMX=640 , JMX=320)
+       PARAMETER (IMX=360 , JMX=180)
        COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),
      *      DEL(IMX,JMX),THA(IMX,JMX),XF(IMX,JMX),DS(IMX,JMX)
 C
@@ -3738,7 +3738,7 @@ c
 c  calculates the radial profile for eight azimuthal angles
 c
        PARAMETER ( nmx=24)
-       PARAMETER (IMX=640 , JMX=320, iimx=110)
+       PARAMETER (IMX=360 , JMX=180, iimx=110)
        DIMENSION xf(imx,jmx)
        dimension idst(nmx),hmax(nmx),rmax(nmx)
 C
@@ -3857,7 +3857,7 @@ c
          END
        SUBROUTINE calcr(RO,RTAN,xc,yc,yold,u,v)
        PARAMETER ( nmx=24)
-       PARAMETER (IMX=640 , JMX=320)
+       PARAMETER (IMX=360 , JMX=180)
        DIMENSION XR(NMX),u(imx,jmx),v(imx,jmx)
 C
        COMMON  /TOTAL/ DDEL,dtha
@@ -3906,7 +3906,7 @@ c
 c
 c  finds rfind from azimuthally averaged radial profile of tang. wind
 c
-        parameter(imx=640,jmx=320,nmx=24,iimx=110)
+        parameter(imx=360,jmx=180,nmx=24,iimx=110)
         dimension tanuv(iimx)
 ccc       common /scale/rmxavg,rfind
 c
@@ -3955,7 +3955,7 @@ c
         return
         end
        subroutine bound2(u,v,tanuv,r0,xc,yc,yyo)
-       PARAMETER(IMX=640,JMX=320,nmx=24)
+       PARAMETER(IMX=360,JMX=180,nmx=24)
        DIMENSION u(imx,jmx),v(imx,jmx),tani(nmx)
 c       COMMON  /POSIT/ XOLD,YOLD,XCORN,YCORN,Rxx,XV,YV
        COMMON  /TOTAL/ DDEL,dtha

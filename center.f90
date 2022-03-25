@@ -16,21 +16,13 @@
     DIMENSION DSS(IGL)
 !
     AFCT = 150.
-!    AFCT = 1.0E10
+    ! AFCT = 1.0E10
     DFCT = 2.0 * AFCT
     RAD = 6.371E3
-    ! PI = 4.*ATAN(1.0)
-    ! PI180 = PI / 180.
     XCC = XV
     YCC = YV
-    print *, 'XCC=', XCC
-    print *, 'YCC=', YCC
-    print *, 'XCORN=', XCORN
-    print *, 'YCORN=', YCORN
     DX = PI180 * (XCC - XCORN) / DDEL
     DY = PI180 * (YCC - YCORN) / DTHA
-!    IX = IFIX(DX) + 1 
-!    IY = IFIX(DY) + 1
     IX = IFIX(DX)
     IY = IFIX(DY)
     PRINT*

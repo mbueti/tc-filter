@@ -2,7 +2,7 @@
     parameter(lgth=30,iimx=110)
     ! parameter(nmx=64,imx=640,jmx=320,lgth=30,iimx=110)
     dimension dumu(imx,jmx),dumv(imx,jmx),tw(imx,jmx)
-    dimension tprof(7,7,lgth),itpos(7,7),tmax(7,7),tanavg(iimx)
+    dimension tprof(8,8,lgth),itpos(8,8),tmax(8,8),tanavg(iimx)
     COMMON  /TOTAL/ DDEL,dtha
     COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,IX,IY
     COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),DEL(IMX,JMX),THA(IMX,JMX),XF(IMX,JMX),DS(IMX,JMX)
@@ -13,24 +13,24 @@
     ! PI180 = pi/180.
     fact=cos(yold)
     deltar=0.1
-    dxc=xold/pi180-xcorn
-    dyc=yold/pi180-ycorn
-    ixc=int(dxc)+1
-    iyc=int(dyc)+1
-    print *,'ixc=',ixc
-    print *,'iyc=',iyc
-    print *,'dxc=',dxc
-    print *,'dyc=',dyc
     print *,'xold=',xold
     print *,'xcorn=',xcorn
     print *,'yold=',yold
     print *,'ycorn=',ycorn
+    dxc=xold/pi180-xcorn
+    dyc=yold/pi180-ycorn
+    ixc=int(dxc)+1
+    iyc=int(dyc)+1
+    !print *,'ixc=',ixc
+    !print *,'iyc=',iyc
+    !print *,'dxc=',dxc
+    !print *,'dyc=',dyc
     ist=ixc-3
     jst=iyc-3
     iend=ixc+3
     jend=iyc+3
-    npts=7
-    print*,'ist,iend',ist,jst,iend,jend
+    npts=8
+    !print*,'ist,iend',ist,jst,iend,jend
 !
 !  compute radial profile of azimuthal avg. tang. wind at each pt
 !
@@ -46,8 +46,8 @@
         end do                     
       end do
     end do
-    print *, 'let us see the value of tprof'
-    print 333,((tprof(i,1,k),i=4,7),(tprof(i,2,k),i=4,7),(tprof(i,3,k),i=4,7),(tprof(i,4,k),i=4,7),k=1,lgth)
+    !print *, 'let us see the value of tprof'
+    !print 333,((tprof(i,1,k),i=4,7),(tprof(i,2,k),i=4,7),(tprof(i,3,k),i=4,7),(tprof(i,4,k),i=4,7),k=1,lgth)
 333 format(16f7.1)
 !
 !  find the first relative maximum along each azimuthal direction
@@ -63,7 +63,7 @@
 !
 !       fixed the bug found april 22, 1994.......>>>
 !
-            itpos(i,j)=100*(ist+i-1)+j+jst-1
+            itpos(i,j)=30*(ist+i-1)+j+jst-1
             hmax=amax1(tmax(i,j),hmax)
             if(hmax.eq.tmax(i,j))ipos=itpos(i,j)
             if(hmax.eq.tmax(i,j)) rmxpos=float(ir)*0.2
@@ -76,23 +76,29 @@
         if(hmax.eq.tmax(i,j)) ipos=itpos(i,j)
       end do
 53  continue
-    print *, 'hmax, rmxpos, 5x rmxpos are'
-    print*,hmax,rmxpos,rmxpos/0.2
-    print *, 'tmax is'
-    print *,((tmax(i,j),i=1,npts),j=1,npts)
-    print *, 'itpos is'
-    print *,((itpos(i,j),i=1,npts),j=1,npts)
+    !print *, 'hmax, rmxpos, 5x rmxpos are'
+    !print*,hmax,rmxpos,rmxpos/0.2
+    !print *, 'tmax is'
+    !print *,((tmax(i,j),i=1,npts),j=1,npts)
+    !print *, 'itpos is'
+    !print *,((itpos(i,j),i=1,npts),j=1,npts)
 !
 !
 !
 !  use position of the largest relative maximum as the adjusted
 !  center location
 !
-    print *, 'ipos=',ipos
-    ycn=float(mod(ipos,imx))-1.
-    xcn=float(ipos/imx)-1.
-    ixc=int(xcn)+1
-    iyc=int(ycn)+1
+    !print *, 'ipos=',ipos
+    !print *, 'imx=',imx
+    ycn=float(mod(ipos,imx))
+    xcn=float(ipos/imx)
+    !print *, 'xcn=',xcn
+    !print *, 'ycn=',ycn
+    !print *, 'ddel=',DDEL
+    ixc=ceiling(xcn)+1
+    iyc=ceiling(ycn)+1
+    if (ixc.gt.imx) ixc=mod(ixc,imx)+1
+    if (iyc.gt.jmx) iyc=jmx-(mod(iyc,jmx)+1)
     xctest=(xcn+xcorn)*pi180
     yctest=(ycn+ycorn)*pi180
 !
@@ -108,7 +114,7 @@
     ! print *, 'jend=', jend
     ! print*, shape(del)
     ! print*, 'del=', del(ixc+1,iyc+1)
-    print*,ixc,iyc,del(ixc+1,iyc+1)/pi180,tha(ixc+1,iyc+1)/pi180
+    !print*,ixc,iyc,del(ixc+1,iyc+1)/pi180,tha(ixc+1,iyc+1)/pi180
     do j=1,jmx
       do i=1,imx
         dx=(del(i,j)-xctest)*fact
@@ -138,19 +144,19 @@
         iflag=1
       end if
     end do
-    print*,'found rmxavg ',rmxavg,hmax
+    ! print*,'found rmxavg ',rmxavg,hmax
     dxc=xcn
     dyc=ycn
     yold=xcn+xcorn
 700 format(10f6.1)
-    print 700,tanavg
+    ! print 700,tanavg
     call findra( dxc,dyc,yctest,rmxavg,rfavg,tanavg)
 !
     alim = .75
-    print*
-    print*,'a factor to determine rmxlim: ',alim
+    !print*
+    !print*,'a factor to determine rmxlim: ',alim
 !
     rmxlim = alim*rmxavg + (1.-alim)*rfavg 
-    print*,'found rfavg ',rfavg,rmxlim,dxc,dyc
+    ! print*,'found rfavg ',rfavg,rmxlim,dxc,dyc
     return
   END SUBROUTINE maxth

@@ -294,10 +294,11 @@
 !        PACKAGE.  BY R. E. JONES.  AVAILABLE AS SANDIA
 !        TECHNICAL REPORT SAND78-1189.
 !
-    REAL DUMMY, W(MDW,1), PRGOPT(1), X(1), RNORM
+    REAL DUMMY, PRGOPT(1), X(1), RNORM, WD(1), H(1), SCALE(MA+ME), Z(1), TEMP(1), D(N)
+    real(kind=16) W(MDW,1)
     INTEGER nwrk, niwrk
     INTEGER IWORK(niwrk)
-    REAL WORK(nwrk)
+    REAL(kind=16) WORK(nwrk)
 !
 !
 !***FIRST EXECUTABLE STATEMENT  WNNLS
@@ -348,9 +349,15 @@
     L3 = L2 + ME + MA
     L4 = L3 + N
     L5 = L4 + N
+
+    WD(1) = real(work(1))
+    H(1) = real(work(L1))
+    Z(1) = real(work(L3))
+    TEMP(1) = real(work(L4))
+    D = real(WORK(L5))
+    SCALE = real(WORK(L2))
 !
-    CALL WNLSM(W, MDW, ME, MA, N, L, PRGOPT, X, RNORM, MODE, IWORK, &
-                IWORK(L1), WORK(1), WORK(L1), WORK(L2), WORK(L3), WORK(L4), &
-                WORK(L5))
+    CALL WNLSM(real(W), MDW, ME, MA, N, L, PRGOPT, X, RNORM, MODE, IWORK, &
+                IWORK(L1), work(1), H, SCALE, Z, TEMP, D)
     RETURN
   END SUBROUTINE WNNLS

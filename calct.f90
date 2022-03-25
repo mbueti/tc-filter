@@ -4,9 +4,13 @@
 !
             ! PARAMETER ( nmx=64)
       !  PARAMETER (IMX=640 , JMX=320, iimx=110)
+    IMPLICIT NONE
+    REAL,INTENT(in) :: rmxlim,xc,yc,yo,xf,deltar
+    INTEGER iimx,id1,id2,irend,iravg,iaa,IX,IY,IX1,IY1,I,irvgu,ir
     parameter(iimx=110)
     DIMENSION xf(imx,jmx)
-    dimension idst(nmx),hmax(nmx),rmax(nmx)
+    real, dimension(nmx) :: idst,hmax,rmax
+    real DDEL,dtha,dist,xr,rmxavg,rfind,xv,yv,xold,yold,xcorn,ycorn,factr,arad,fact,bfact,rdistl,DX,DY,THETA,ro,X,Y,P,Q
 !
     common /scale/rmxavg,rfind
     common /pass/xr(iimx,nmx),dist(nmx)
@@ -14,15 +18,13 @@
     COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,id1,id2
 !
     arad=6371.
-    ! print*,'calct',deltar,xc,yc,yo,yold
     fact=cos(yo)
 !
 !   set the factor to determine lower limit of dist search
 !
     bfact = .5
-    rdistl =  bfact*rmxavg 
+    rdistl =  bfact*rmxavg
 !
-    ! print*
     ! print*,'b factor to determine rdistl: ',bfact
 !
 !
@@ -33,8 +35,8 @@
 !       
     iravg =int(rdistl/deltar)
 !
-    ! print*,'lower limit and radius of dist search: ',rdistl,iravg
-    ! print*,'upper limit and radius of dist search: ',rmxlim,irend
+    print*,'lower limit and radius of dist search: ',rdistl,iravg
+    print*,'upper limit and radius of dist search: ',rmxlim,irend
 !
     DX=DDEL*(1./PI180)
     DY=DTHA/PI180
@@ -48,14 +50,24 @@
         ro=float(ir)*deltar
         X=(RO*COS(THETA))/(fact) +XC +1.
         Y=(RO*SIN(THETA)) +YC +1.
-        IX=INT(X/DX)
-        IY=INT(Y/DY)
+        IX=CEILING(X/DX)+1
+        IY=CEILING(Y/DY)+1
+
+        if(IX.le.0) IX=IX+IMX
+        if(IX.gt.IMX) IX=MOD(IX,IMX)+1
+        if(IY.le.0) IY=IY+JMX
+        if(IY.gt.JMX) IY=MOD(IY,JMX)+1
+
         IX1=IX+1
         IY1=IY+1
+        
+        if(IX1.gt.IMX) IX1=MOD(IX1,IMX)+1
+        if(IY1.gt.JMX) IY1=MOD(IY1,JMX)+1
+
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
-        XR(ir,I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY+1) &
-                +(1.-Q)*P*XF(IX+1,IY) + P*Q*XF(IX+1,IY+1)
+        XR(ir,I)=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY1) &
+                +(1.-Q)*P*XF(IX1,IY) + P*Q*XF(IX1,IY1)
 11    continue
 !
 ! find relative max after which ro check begins 
@@ -78,9 +90,6 @@
         irvgu = 3
       endif
 !
-      ! print*,'irend=',irend
-      ! print*,'iravg=',iravg
-      ! print*,'idst=',idst
       if(irend.eq.idst(i).or.iravg.eq.idst(i)) then
         do 13 ir=irend,irvgu,-1
           if(ir .lt. 2)then
@@ -102,25 +111,23 @@
 !
 !  
       if(idst(i).lt.iravg) then
-        ! print*,'lower limit check, dist changed to rmxlim, i is: ',i
+        print*,'lower limit check, dist changed to rmxlim, i is: ',i
         dist(i) = rmxlim
       end if
 !
 !
 10  CONTINUE
 !
-    do 450 iaa = 1 , nmx
+    do iaa = 1,nmx
       WRITE(94,*)iaa,dist(iaa) 
-450 continue
+    end do
 !
     write(94,*)rdistl,rmxlim
 !
 !
     dist=dist*1.1
-    ! print*,'relative max found '
-    print 4400,dist
-4400  format(25f4.1)
-    write(4,400) (float(ir)*deltar,(xr(ir,i)/100.,i=1,1),ir=1,iimx)
-400 format(25f5.1)
+    print*,'relative max found '
+    ! print '(25f4.1)', dist
+    write(4,'(25f5.1)') (float(ir)*deltar,(xr(ir,i)/100.,i=1,1),ir=1,iimx)
     RETURN
   END SUBROUTINE calct
