@@ -1330,27 +1330,39 @@ C        print *, 'ro=', ro, ' x=', x
 10     CONTINUE
          RETURN
          END
+
        SUBROUTINE CENTER(UP,VP,DELG,THAG)
+         implicit none
 CC
-       real :: xv, yv
-       PARAMETER (IMX=360 , JMX=180, nmx=64)
-CC     PARAMETER  (IMX=75, JMX=75)
-       PARAMETER  ( KMAX=18,  LGI=20 )
-       PARAMETER  (IGL = 500)
+       integer, PARAMETER :: IMX=360, JMX=180, nmx=64,
+     *                       KMAX=18, LGI=20, IGL=500
+       real, dimension(imx,jmx), intent(in) :: up, vp
+       real, intent(inout) :: delg, thag
+       integer :: dftx, dfty, ntr, nstflg, nn1, nn2, nn3, nn4,
+     *            i, ib, ie, j, jb, je, iw, ix, iy, jjmax, ngd,
+     *            ngr, jmax, itot, IRANG, ii, ihx, ihy, icx, icy,
+     *            ifl, im, imax, iimax, js, jn
+       real :: xv, yv, afct, alpha, angl, cosf, ddd, pi, pi180,
+     *         ddel, dtha, dfct, dist, xcc, ycc, xold, yold,
+     *         xcorn, ycorn, ttt, rad, dx, dy, dt, factr
+       real, dimension(2,6) :: cmsum
+       real, dimension(IGL) :: dll, thh, wind, xm, rm, tabpr, tfour,
+     *                         tfive, tsix, tpres, dss
+       real, dimension(imx, jmx) :: tanw, del, tanp, ds, tang, tha
+       real, dimension(imx,jmx,2) :: dmmm
        COMMON  /GDINF/  NGD,NGR,NTR,DT,JS,JN,IE,IW,IIMAX,IMAX,JJMAX,
      *                  JMAX,NSTFLG,ICX,ICY,IHX,IHY,DFTX,DFTY
 CC
       COMMON /VAR/  DIST,NN1,NN2,NN3,NN4,IFL
-       COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),
-     *  DEL(IMX,JMX),THA(IMX,JMX),TANP(IMX,JMX),DS(IMX,JMX)
+       COMMON /WINDS/ DMMM,TANG,DEL,THA,TANP,DS
        COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,IX,IY
        COMMON /TOTAL/ DDEL,DTHA
-       DIMENSION  UP(IMX,JMX),VP(IMX,JMX)
-       DIMENSION  CMSUM(2,6),DLL(IGL),THH(IGL),WIND(IGL)
-       DIMENSION  XM(IGL),RM(IGL)
-       DIMENSION  TABPR(IGL),TFOUR(IGL),TFIVE(IGL),TSIX(IGL)
-       DIMENSION  TPRES(IGL),DSS(IGL),tanw(imx,jmx)
-
+C       DIMENSION  UP(IMX,JMX),VP(IMX,JMX)
+C       DIMENSION  DLL(IGL),THH(IGL),WIND(IGL)
+C       DIMENSION  XM(IGL),RM(IGL)
+C       DIMENSION  TABPR(IGL),TFOUR(IGL),TFIVE(IGL),TSIX(IGL)
+C       DIMENSION  TPRES(IGL),DSS(IGL),tanw(imx,jmx)
+C
 C
       AFCT = 150.
 CCCCC      AFCT = 1.0E10
@@ -1457,16 +1469,31 @@ C
       PRINT*
       RETURN
       END
+
       SUBROUTINE maxth(dumu,dumv,dxc,dyc,rmxlim,tw)
-        real :: xv, yv
-        parameter(nmx=64,imx=360,jmx=180,lgth=60,iimx=110)
-        dimension dumu(imx,jmx),dumv(imx,jmx),tw(imx,jmx)
-        dimension th(imx,jmx),tanmx(imx,jmx),tprof(7,7,lgth)
-     1      ,itpos(7,7),tmax(7,7),tanavg(iimx)
+        implicit NONE
+
+        integer, parameter :: nmx=64,imx=360,jmx=180,lgth=60,iimx=110
+        real, intent(inout) :: dxc, dyc, rmxlim
+        real, dimension(imx,jmx), intent(in) :: dumu, dumv
+        real, dimension(imx,jmx), intent(inout) :: tw
+        real :: xv, yv, alim, ddel, dtha, deltar, dx, dy, fact, factr,
+     *          hmax, pi, pi180, rbd, rfavg, rfind, rmxavg, tanp, rxx,
+     *          theta, xcorn, ycorn, xold, yold, rmxpos, rtan, xcen,
+     *          xcn, xctest, ycen, ycn, yctest, yyo
+        integer :: i, iend, if, iflag, im, ipos, ir, ist, ix, iy, ixc,
+     *             iyc, ixc1, iyc1, j, jend, jst, npts
+        real, dimension(imx,jmx) :: del, tha, xf, ds, tang, th, tanmx
+        real, dimension(imx,jmx,2) :: dmmm
+        integer, dimension(7,7) :: itpos
+        real, dimension(7,7) :: tmax
+        real, dimension(7,7,lgth) :: tprof
+        real, dimension(iimx) :: tanavg
+C        dimension dumu(imx,jmx),dumv(imx,jmx),tw(imx,jmx)
+C        dimension th,tanmx,tprof,itpos,tmax,tanavg
        COMMON  /TOTAL/ DDEL,dtha
        COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,IX,IY
-       COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),
-     *      DEL(IMX,JMX),THA(IMX,JMX),XF(IMX,JMX),DS(IMX,JMX)
+       COMMON /WINDS/ DMMM,TANG,DEL,THA,XF,DS
 c
         common /scale/rmxavg,rfind
 c
@@ -1574,11 +1601,6 @@ c  recompute the tangential wind component based on new center
 c
        fact = cos(tha(1,iyc))
        print *,'in maxth',ycn,xcn,fact,xctest/pi180,yctest/pi180
-      print*, 'ixc=',ixc
-      print*, 'iyc=',iyc
-      print*, shape(del)
-      print*, 'del=', del(ixc1,iyc+1)
-       print*,ixc,iyc,del(ixc1,iyc+1)/pi180,tha(ixc1,iyc+1)/pi180
        do 334 j=1,jmx
        do 334 i=1,imx
         dx=(del(i,j)-xctest)*fact
@@ -1625,10 +1647,20 @@ c
         print*,'found rfavg ',rfavg,rmxlim,dxc,dyc
         return
         end
+
        SUBROUTINE CALCRa(RO,RTAN,iang,dist)
-       real :: xv, yv
-       PARAMETER ( NMX=64)
-       PARAMETER (IMX=360 , JMX=180)
+         implicit none
+
+         real, intent(in) :: ro, dist
+         integer, intent(in) :: iang
+         real, intent(out) :: rtan
+
+       integer :: id1, id2, ix, ix1, iy, iy1
+       real :: xv, yv, ddel, dtha, pi, pi180, fact, dx, dy,
+     *         xc, yc, theta, x, dmmm, tang, del, tha, xf,
+     *         ds, xold, yold, xcorn, ycorn, factr, p, q,
+     *         x1, y, y1
+       integer, PARAMETER :: NMX=64, IMX=360 , JMX=180
        COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),
      *      DEL(IMX,JMX),THA(IMX,JMX),XF(IMX,JMX),DS(IMX,JMX)
 C
@@ -1672,14 +1704,18 @@ c
 c
          RETURN
          END
+
        SUBROUTINE INTERP(UO,VO,SIGP,ILEV,UN,VN)
 C
-       PARAMETER ( KMAX = 18, ILT=20 )
+        implicit none
+       integer, PARAMETER :: KMAX = 18, ILT=20
 C
-       DIMENSION  UO(ILT),VO(ILT)
-       DIMENSION  SIGP(ILT),Q(KMAX)
-       DIMENSION  UN(KMAX),VN(KMAX)
-       DIMENSION  UF(KMAX),VF(KMAX)
+       integer, intent(in) :: ilev
+       real, DIMENSION(ilt), intent(in) :: UO,VO, sigp
+       real, dimension(kmax), intent(out) :: un,vn
+       real, dimension(kmax) :: q, uf, vf
+       real :: dx, dx1, dx2, sgo1, sgo2, sgn, tmask, x1, x2
+       integer :: ilevm, k, kk
 C
        DATA Q/ .9949968,.9814907,.9604809,.9204018,.8563145,.7772229,
      *           .6881255,.5935378,.4974484,.4248250,.3748014,.3247711,
@@ -1696,7 +1732,7 @@ C
        DO 10 KK = 1 , ILEVM
 C
        SGO1 = SIGP(KK)
-       SG02 = SIGP(KK+1)
+       SGO2 = SIGP(KK+1)
 C
        DO 20 K  = 1 ,  KMAX
 C
@@ -1710,8 +1746,8 @@ C
        VF(K) = TMASK
        ENDIF
 C
-       IF(SGN.LE.SGO1.AND.SGN.GE.SG02)THEN
-       DX  = SGO1  - SG02
+       IF(SGN.LE.SGO1.AND.SGN.GE.SGO2)THEN
+       DX  = SGO1  - SGO2
        DX1 = SGO1  - SGN
        DX2 = SGN  - SGO2
        X1 = DX1/DX
