@@ -5,4 +5,7 @@ MODULE filter_routines
   CONTAINS
     INCLUDE 'mergefrac.f90'
     INCLUDE 'phase.f90'
+    INCLUDE 'separ.f90'
+    INCLUDE 'bound.f90'
+    INCLUDE 'center.f90'
 END MODULE filter_routines

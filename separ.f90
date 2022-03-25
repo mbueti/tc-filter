@@ -1,28 +1,35 @@
-  SUBROUTINE SEPAR(XD)
+SUBROUTINE SEPAR(XD)
 !
 !  SEPERATES A FIELD INTO HURRICANE COMPONENT AND REMAINDER
 !
-    PARAMETER(nmx1=nmx+1,nmx2=nmx*2,nmx6=nmx*6)
-    DIMENSION XR(NMX),XD(IMX,JMX)
-!
-    COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX), &
-                   DEL(IMX,JMX),THA(IMX,JMX),TANP(IMX,JMX),DS(IMX,JMX)
-    COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,IX,IY
-    COMMON  /IFACT/NNN,rovect(nmx),RB,IENV
-    COMMON /XXX/  XF(IMX,JMX),XC,YC,DX,DY
-    COMMON /TOTAL/ DDEL,DTHA
-!
+  implicit NONE
+  integer, PARAMETER :: NMX=64,nmx1=nmx+1,nmx2=nmx*2,nmx6=nmx*6
+  integer, PARAMETER :: IMX=360 , JMX=180
+  real, dimension(imx, jmx), intent(inout) :: xd
+  integer :: ix, iy, i, ie, ienv, im, ip, is, j, je, js, jy, jp,n1, n2, nnn, md
+  real :: xv, yv, xold, yold, xcorn, ycorn, capd2, ddel, dtha,delth, delx, dely, dr, dpij, ro, romax, temp, x, y,dx, dy, fact, &
+          factr, pi, pi180, theta, xc, yc, xro,rb, rnm
+  real, dimension(nmx) :: xr
+  real, dimension(nmx,nmx) :: a
+  real, dimension(nmx,nmx1) :: ab
+  real, dimension(nmx) :: b, w, xvect, yvect, rovect
+  integer, dimension(nmx) :: ipvt
+  real, dimension(121) :: wrk
+  integer, dimension(25) :: iwrk
+  real, dimension(imx, jmx) :: del, tha, tanp, ds, tang, xf
+  real, dimension(imx, jmx, 2) :: dmmm
+  
+  COMMON /WINDS/ DMMM,TANG,DEL,THA,TANP,DS
+  COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,IX,IY
+  COMMON  /IFACT/NNN,rovect,RB,IENV
+  COMMON /XXX/  XF,XC,YC,DX,DY
+  COMMON /TOTAL/ DDEL,DTHA
+  
 ! new arrays
-    real(kind=16), dimension(nmx) :: b
-    real, dimension(nmx) :: w, ipvt
-    real(kind=16), dimension(nmx,nmx1) :: ab
-    real(kind=16), dimension(nmx6) :: wrk
-    integer, dimension(nmx2) :: iwrk 
-    real(kind=16) dpij
-    common /matrix/ a(nmx,nmx),capd2
-    common /vect/xvect(nmx),yvect(nmx)
-!
-    DATA XR/nmx*0./
+  common /matrix/ a,capd2
+  common /vect/xvect,yvect
+  
+  DATA XR/64*0./
 !
 !  XC,YC ARE HURRICANE COORDINATES
 !  RO  IS RADIUS AT WHICH HURRICANE COMPONENT OF FIELD GOES TO ZERO
@@ -32,50 +39,49 @@
 !  set ro to be max value of rovect
 !
 !
-    ro=0.
-    do 22 i=1,nmx
-      ro=amax1(ro,rovect(i))
-22  continue
-    ! print*,'ro=',ro,capd2,a(1,1),a(2,1)
-    FACT = COS(YOLD*PI180)
-!C
-!C   XC IS THE I POSITION OF THE CENTER OF THE OLD VORTEX
-!C   YC IS THE J POSITION OF THE CENTER OF THE OLD VORTEX
-!C   DDEL IS THE LONG. IN RADIANS OF THE OUTER NEST
-!C   DTHA IS THE LAT.  IN RADIANS OF THE OUTER NEST
-!C
+  ro=0.
+  DO i=1,nmx
+    ro=amax1(ro,rovect(i))
+  END DO
+  ro=amin1(ro, 30.0)
+!        print*,'rovect=',rovect
+!        print*,'ro=',ro,capd2,a(1,1),a(2,1)
+!        ro = ro*1.5
+  FACT =  COS(YOLD*PI180)
+!
+!   XC IS THE I POSITION OF THE CENTER OF THE OLD VORTEX
+!   YC IS THE J POSITION OF THE CENTER OF THE OLD VORTEX
+!   DDEL IS THE LONG. IN RADIANS OF THE OUTER NEST
+!   DTHA IS THE LAT.  IN RADIANS OF THE OUTER NEST
+!
 ! no fact here
 !      DX=FACT*DDEL/PI180
 !
-    dx=ddel/pi180
-    DY=DTHA/PI180
-!C
-!c
-    XC = (XOLD-XCORN)*DX
-    YC = (YOLD-YCORN)*DY
-    IS=INT((XC-RO/fact)/DX) +1.
-    IE=INT((XC+RO/fact)/DX + 1.)
-    JS=INT((YC-RO)/DY) +1.
-    JE=INT((YC+RO)/DY + 1.)
-
-    IS=MAX(IS,1)
-    JS=MAX(JS,1)
-    IE=MIN(IE,IMX)
-    JE=MIN(JE,JMX)
+  dx=ddel/pi180
+  DY=DTHA/PI180
 !
-    DO J = 1 , JMX
-      DO I = 1 , IMX
-        XF(I,J)  = XD(I,J)
-      END DO
+!
+  XC = (XOLD-XCORN)*DX
+  YC = (YOLD-YCORN)*DY
+  IS=NINT((XC-RO/fact)/DX) +1.
+  IE=NINT((XC+RO/fact)/DX + 1.)
+  JS=NINT((YC-RO)/DY) +1.
+  JE=NINT((YC+RO)/DY + 1.)
+!
+  DO J = 1 , JMX
+    DO I = 1 , IMX
+      XF(I,J)  = XD(I,J)
     END DO
+  END DO
 !
 !  SUBROUTINE BOUND COMPUTES FIELD VALUES OF ARRAY XR USING
 !         BILINEAR INTERPOLATION
 !
 !
-    ! Print*, 'calling BOUND from SEPAR '
-    CALL BOUND(NMX,XR,rovect)
-    ! print*,'here is rovect ',rovect
+  Print*, 'calling BOUND from SEPAR '
+!        print*,'here is xr ',xr
+  CALL BOUND(NMX,XR,rovect)
+!        print*,'here is rovect ',rovect
 !
 !  xrop(nmx) are the interpolated values of the disturbance
 !   field at the rovect pts
@@ -86,87 +92,66 @@
 !
 !
 !
-    w=0.
-    romax=ro
+  w=0.
+  romax=ro
 !
-    !print *, "IS=",IS
-    !print *, "IE=",IE
-    !print *, "JS=",JS
-    !print *, "JE=",JE
-    DO 10 IX=IS,IE
-      DO 11 JY=JS,JE
-        ro=romax
-!       X=XC-RO +DX*(IX-IS)
-!       Y=YC-RO +DY*(JY-JS)
-!       X= DX*float(IX)
-!       Y= DY*float(JY)
-        x=del(ix,jy)/pi180 -xcorn
-        y=tha(ix,jy)/pi180 -ycorn
-        delx=(x-xc)*fact
-        dely=(y-yc)
-        DR=SQRT((delx)**2 +(dely)**2)
-        IF(DR.GT.RO)GOTO11
-        IF(delx.ne.0.) THETA=ATAN((dely)/(delx))
-        if(delx.eq.0..and.dely.lt.0.)theta=270.*pi180
-        if(delx.eq.0..and.dely.gt.0.)theta=90. *pi180
-        IF(delx.LT.0.)THETA=THETA+PI
-        IF(THETA.LT.0.)THETA=2.*PI+THETA
-        N1=INT(THETA*NMX/(2.*PI))
-        IF(N1.GT.nmx)PRINT*,N1,THETA*57.296
-        IF(N1.LT.0)PRINT*,N1,THETA*57.296
-        N2=N1+2
-        IF(N2.GT.NMX)N2=N2-NMX
-        DELTH=THETA- 2.*PI*FLOAT(N1)/FLOAT(NMX)
+  IF (ie.gt.imx.or.je.gt.jmx.or.is.lt.1.or.js.lt.1) THEN
+    print *, 'ro=',ro
+    print *, 'fact=',fact
+    print *, 'xold=', xold, 'yold=', yold
+    print *, 'xc=', xc, 'yc=', yc
+    print *, 'js=', JS, ' je=', JE
+  END IF
+  DO 10 IX=IS,IE
+    DO 11 JY=JS,JE
+      ro=romax
+      im = modulo(ix-1, imx)+1
+      x=del(im,jy)/pi180 -xcorn
+      y=tha(im,jy)/pi180 -ycorn
+      delx=(x-xc)*fact
+      dely=(y-yc)
+      DR=SQRT((delx)**2 +(dely)**2)
+      IF(DR.GT.RO)GOTO11
+      IF(delx.ne.0.) THETA=ATAN((dely)/(delx))
+      if(delx.eq.0..and.dely.lt.0.)theta=270.*pi180
+      if(delx.eq.0..and.dely.gt.0.)theta=90. *pi180
+      IF(delx.LT.0.)THETA=THETA+PI
+      IF(THETA.LT.0.)THETA=2.*PI+THETA
+      N1=INT(THETA*NMX/(2.*PI))
+      IF(N1.GT.nmx)PRINT*,N1,THETA*57.296
+      IF(N1.LT.0)PRINT*,N1,THETA*57.296
+      N2=N1+2
+      IF(N2.GT.NMX)N2=N2-NMX
+      DELTH=THETA- 2.*PI*FLOAT(N1)/FLOAT(NMX)
 !
-        ro=delth*float(nmx)/(2.*pi)*(rovect(n2)-rovect(n1+1))+rovect(n1+1)
-        IF(DR.GT.ro)GOTO11
-        XRO=DELTH*FLOAT(NMX)/(2.*PI)*(XR(N2)-XR(N1+1)) +XR(N1+1)
-        ! print *, 'XRO=', XRO
+      ro=delth*float(nmx)/(2.*pi)*(rovect(n2)-rovect(n1+1))+rovect(n1+1)
+      IF(DR.GT.ro)GOTO11
+      XRO=DELTH*FLOAT(NMX)/(2.*PI)*(XR(N2)-XR(N1+1)) +XR(N1+1)
 !
 ! Now add new code to compute distance from each gridpt. to rovect pts
 !
-        do 12 ip=1,nmx
-          dpij= (fact*(x-xvect(ip)))**2 +(y-yvect(ip))**2
-          ! print *, 'ip=', ip
-          ! print *, 'dpij=', dpij
-          ! print *, 'capd2=', capd2
-          ! print *, -dpij/capd2
-          ! print *, exp(-99.8140106)
-          if (dpij/capd2 > 100) then
-            b(ip) = 0
-          else
-            ! print *, 'dpij=',dpij
-            ! print *, 'capd2=',capd2
-            ! print *, 'b(ip)=', b(ip)
-            ! print *, -dpij/capd2
-            
-            b(ip) = exp(-dpij/capd2)
-          endif
-          ! print *, 'b(ip)=', b(ip)
-12      continue
-        ! print *, 'b=', b
-!
-!
-        do 44 ip=1,nmx
-          do 43 jp=1,nmx
-            ab(ip,jp)=a(ip,jp)
-43        continue
-          ab(ip,nmx1)=b(ip)
-44      continue
-        ! print *, 'ab=', ab
+      DO ip=1,nmx
+        dpij= (fact*(x-xvect(ip)))**2 +(y-yvect(ip))**2
+        b(ip)=exp(-dpij/capd2)
+      END DO
+
+      DO ip=1,nmx
+        DO jp=1,nmx
+          ab(ip,jp)=a(ip,jp)
+        END DO
+        ab(ip,nmx1)=b(ip)
+      END DO
 !
 !  solve system using constrained least squares method
 !
-        print *, 'calling wnnls'
-        call wnnls(ab,nmx,0,nmx,nmx,0,[1.],w,rnm,md,iwrk,wrk,nmx6,nmx2)
+        !      call wnnls(ab,nmx,0,nmx,nmx,0,[1.],w,rnm,md,iwrk,wrk)
 !
-        temp=0.
-        do 20 ip=1,nmx
-          temp=temp +w(ip)*xr(ip)
-20      continue
-!       xh(ix,jy)=xf(ix,jy)-temp
-        xd(ix,jy)=temp
-11    CONTINUE
-10  CONTINUE
-    RETURN
-  END SUBROUTINE SEPAR
+      temp=0.
+      DO ip=1,nmx
+        temp=temp +w(ip)*xr(ip)
+      END DO
+      xd(ix,jy)=temp
+11  CONTINUE
+10 CONTINUE
+  RETURN
+END SUBROUTINE SEPAR
