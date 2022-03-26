@@ -1,10 +1,9 @@
 SUBROUTINE BOUND(NMX,XR,ro)
   IMPLICIT NONE
-  integer, PARAMETER :: IMX=360, JMX=180
   integer, intent(in) :: nmx
   real, dimension(nmx), intent(in) :: ro
   real, dimension(nmx), intent(out) :: xr
-  real :: xv, yv, xc, yc, dx, dy, xold, yold, xcorn,ycorn, factr, pi, fact, theta, x, y, p, q
+  real :: xv, yv, xc, yc, dx, dy, xold, yold, xcorn,ycorn, factr, fact, theta, x, y, p, q
   integer :: ix, iy, ix1, iy1, i
   real, dimension(imx, jmx) :: xf
   

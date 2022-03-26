@@ -1,8 +1,8 @@
 SUBROUTINE PHASE(IFL,U,V,IMX,JMX,US,VS)
-  implicit none
+  IMPLICIT NONE
   
-  integer, intent(in) :: ifl, imx, jmx
-  integer, PARAMETER :: NX=25
+  INTEGER, INTENT(IN) :: ifl, imx, jmx
+  INTEGER, PARAMETER :: NX=25
 !************************************************************************
 !                                                                       *
 !     THIS SUBROUTINE CREATES  FILTERED  FIELDS OF (U,V) WIND           *

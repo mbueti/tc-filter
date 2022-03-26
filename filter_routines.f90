@@ -7,5 +7,9 @@ MODULE filter_routines
     INCLUDE 'phase.f90'
     INCLUDE 'separ.f90'
     INCLUDE 'bound.f90'
+    INCLUDE 'bound2.f90'
     INCLUDE 'center.f90'
+    INCLUDE 'maxth.f90'
+    INCLUDE 'calcr.f90'
+    INCLUDE 'findra.f90'
 END MODULE filter_routines
