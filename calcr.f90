@@ -8,9 +8,9 @@ SUBROUTINE calcr(RO,RTAN,xc,yc,yold,u,v)
   real, dimension(imx,jmx), intent(in) :: u,v
   real, intent(in) :: ro, xc, yc, yold
   real, intent(out) :: rtan
-  
+
   COMMON  /TOTAL/ DDEL,dtha
-  
+
   fact=cos(yold)
   DX=DDEL/PI180
   DY=DTHA/PI180
@@ -36,7 +36,7 @@ SUBROUTINE calcr(RO,RTAN,xc,yc,yold,u,v)
           +cos(theta)*((1.-P)*(1.-Q)*v(IX,IY)+(1.-P)*Q*v(IX,IY1)+(1.-Q)*P*v(IX1,IY)+P*Q*v(IX1,IY1))
   end do
   RTAN = 0.0
-  
+
 ! calculate azimuthally averaged tangential wind at radius ro
 
   DO I = 1 , NMX

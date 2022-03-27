@@ -1,4 +1,4 @@
-  SUBROUTINE WNNLS(W,MDW,ME,MA,N,L,PRGOPT,X,RNORM,MODE,IWORK,WORK,nwrk,niwrk)
+SUBROUTINE WNNLS(W,MDW,ME,MA,N,L,PRGOPT,X,RNORM,MODE,IWORK,WORK)
 !***BEGIN PROLOGUE  WNNLS
 !***DATE WRITTEN   790701   (YYMMDD)
 !***REVISION DATE  820801   (YYMMDD)
@@ -20,7 +20,7 @@
 !
 !     Abstract
 !
-!     This subprogram solves a linearly constrained least squares
+!     This subfoo solves a linearly constrained least squares
 !     problem.  Suppose there are given matrices E and A of
 !     respective dimensions ME by N and MA by N, and vectors F
 !     and B of respective lengths ME and MA.  This subroutine
@@ -41,7 +41,7 @@
 !               (   A)    (   B), (least squares)
 !               subject to components L+1,...,N nonnegative.
 !
-!     The subprogram chooses the heavy weight (or penalty parameter) WT.
+!     The subfoo chooses the heavy weight (or penalty parameter) WT.
 !
 !     The parameters for WNNLS are
 !
@@ -67,7 +67,7 @@
 !
 !     PRGOPT(*)    This real-valued array is the option vector.
 !                  If the user is satisfied with the nominal
-!                  subprogram features set
+!                  subfoo features set
 !
 !                  PRGOPT(1)=1 (or PRGOPT(1)=1.0)
 !
@@ -108,7 +108,7 @@
 !                  A value of LINK.GT.NLINK=100000 is also an error.
 !                  This helps prevent using invalid but positive
 !                  values of LINK that will probably extend
-!                  beyond the program limits of PRGOPT(*).
+!                  beyond the foo limits of PRGOPT(*).
 !                  Unrecognized values of KEY are ignored.  The
 !                  order of the options is arbitrary and any number
 !                  of options can be changed with the following
@@ -116,7 +116,7 @@
 !                  processing of the option array a count of the
 !                  number of options changed is maintained.
 !                  Whenever this count exceeds NOPT=1000 an error
-!                  message is printed and the subprogram returns.
+!                  message is printed and the subfoo returns.
 !
 !                  OPTIONS..
 !
@@ -216,9 +216,9 @@
 !                  equality constraints and least squares equations.
 !
 !     MODE         The value of MODE indicates the success or failure
-!                  of the subprogram.
+!                  of the subfoo.
 !
-!                  MODE = 0  Subprogram completed successfully.
+!                  MODE = 0  Subfoo completed successfully.
 !
 !                       = 1  Max. number of iterations (equal to
 !                            3*(N-L)) exceeded. Nearly all problems
@@ -229,7 +229,7 @@
 !
 !                       = 2  Usage error occurred.  The offending
 !                            condition is noted with the error
-!                            processing subprogram, XERROR( ).
+!                            processing subfoo, XERROR( ).
 !
 !     User-designated
 !     Working arrays..
@@ -294,70 +294,69 @@
 !        PACKAGE.  BY R. E. JONES.  AVAILABLE AS SANDIA
 !        TECHNICAL REPORT SAND78-1189.
 !
-    REAL DUMMY, PRGOPT(1), X(1), RNORM, WD(1), H(1), SCALE(MA+ME), Z(1), TEMP(1), D(N)
-    real(kind=16) W(MDW,1)
-    INTEGER nwrk, niwrk
-    INTEGER IWORK(niwrk)
-    REAL(kind=16) WORK(nwrk)
+  implicit NONE
+
+  integer, intent(in) :: mdw, me, ma, n, l
+  integer, intent(out) :: mode
+  REAL, dimension(me+ma+5*n), intent(out) :: WORK
+  INTEGER, dimension(N+ME+MA), intent(out) :: iwork
+  real, dimension(mdw,1), intent(in) :: W
+  real, dimension(1), intent(in) :: PRGOPT, x
+  real, intent(in) :: rnorm
+  integer :: iopt, l1, l2, l3, l4, l5, liw, lw, nerr
+  REAL :: DUMMY
 !
 !
 !***FIRST EXECUTABLE STATEMENT  WNNLS
-    MODE = 0
-    iwork(1)=mdw*6
-    iwork(2)=mdw*2
-    IF (MA+ME.LE.0 .OR. N.LE.0) RETURN
-    IF (.NOT.(IWORK(1).GT.0)) GO TO 20
-    LW = ME + MA + 5*N
-    IF (.NOT.(IWORK(1).LT.LW)) GO TO 10
-    NERR = 2
-    IOPT = 1
-    print*,'work array',iwork(1),lw
-    CALL XERRWV('WNNLS( ), INSUFFICIENT STORAGE ALLOCATED FOR WORK(*), NEED LW=I1 BELOW', &
-                70, NERR, IOPT, 1, LW, 0, 0, DUMMY, DUMMY)
-    MODE = 2
-    RETURN
-10  CONTINUE
-20  IF (.NOT.(IWORK(2).GT.0)) GO TO 40
-    LIW = ME + MA + N
-    IF (.NOT.(IWORK(2).LT.LIW)) GO TO 30
-    NERR = 2
-    IOPT = 1
-    CALL XERRWV('WNNLS( ), INSUFFICIENT STORAGE ALLOCATED FOR IWORK(1), NEED LIW=I1 BELOW', &
-                72, NERR, IOPT, 1, LIW, 0, 0, DUMMY, DUMMY)
-    MODE = 2
-    RETURN
-30  CONTINUE
-40  IF (.NOT.(MDW.LT.ME+MA)) GO TO 50
-    NERR = 1
-    IOPT = 1
-    CALL XERROR( 'WNNLS( ), THE VALUE MDW.LT.ME+MA IS AN ERROR', 44,NERR, IOPT)
-    MODE = 2
-    RETURN
-50  IF (0.LE.L .AND. L.LE.N) GO TO 60
-    NERR = 2
-    IOPT = 1
-    CALL XERROR( 'WNNLS( ), L.LE.0.AND.L.LE.N IS REQUIRED', 39, NERR,IOPT)
-    MODE = 2
-    RETURN
+  MODE = 0
+  iwork(1)=mdw*6
+  iwork(2)=mdw*2
+  IF (MA+ME.LE.0 .OR. N.LE.0) RETURN
+  IF (.NOT.(IWORK(1).GT.0)) GO TO 20
+  LW = ME + MA + 5*N
+  IF (.NOT.(IWORK(1).LT.LW)) GO TO 10
+  NERR = 2
+  IOPT = 1
+  print*,'work array',iwork(1),lw
+  CALL XERRWV('WNNLS( ), INSUFFICIENT STORAGE ALLOCATED FOR WORK(*), NEED LW=I1 BELOW', &
+              70, NERR, IOPT, 1, LW, 0, 0, DUMMY, DUMMY)
+  MODE = 2
+  RETURN
+10 CONTINUE
+20 IF (.NOT.(IWORK(2).GT.0)) GO TO 40
+  LIW = ME + MA + N
+  IF (.NOT.(IWORK(2).LT.LIW)) GO TO 30
+  NERR = 2
+  IOPT = 1
+  CALL XERRWV('WNNLS( ), INSUFFICIENT STORAGE ALLOCATED FOR IWORK(*), NEED LIW=I1 BELOW', &
+              72, NERR, IOPT, 1, LIW, 0, 0, DUMMY, DUMMY)
+  MODE = 2
+  RETURN
+30 CONTINUE
+40 IF (.NOT.(MDW.LT.ME+MA)) GO TO 50
+  NERR = 1
+  IOPT = 1
+  CALL XERROR( 'WNNLS( ), THE VALUE MDW.LT.ME+MA IS AN ERROR', 44, NERR, IOPT)
+  MODE = 2
+  RETURN
+50 IF (0.LE.L .AND. L.LE.N) GO TO 60
+  NERR = 2
+  IOPT = 1
+  CALL XERROR( 'WNNLS( ), L.LE.0.AND.L.LE.N IS REQUIRED', 39, NERR, IOPT)
+  MODE = 2
+  RETURN
 !
-!    THE PURPOSE OF THIS SUBROUTINE IS TO BREAK UP THE ARRAYS
-!    WORK(*) AND IWORK(*) INTO SEPARATE WORK ARRAYS
-!    REQUIRED BY THE MAIN SUBROUTINE WNLSM( ).
+!     THE PURPOSE OF THIS SUBROUTINE IS TO BREAK UP THE ARRAYS
+!     WORK(*) AND IWORK(*) INTO SEPARATE WORK ARRAYS
+!     REQUIRED BY THE MAIN SUBROUTINE WNLSM( ).
 !
-60  L1 = N + 1
-    L2 = L1 + N
-    L3 = L2 + ME + MA
-    L4 = L3 + N
-    L5 = L4 + N
-
-    WD(1) = real(work(1))
-    H(1) = real(work(L1))
-    Z(1) = real(work(L3))
-    TEMP(1) = real(work(L4))
-    D = real(WORK(L5))
-    SCALE = real(WORK(L2))
+60 L1 = N + 1
+  L2 = L1 + N
+  L3 = L2 + ME + MA
+  L4 = L3 + N
+  L5 = L4 + N
 !
-    CALL WNLSM(real(W), MDW, ME, MA, N, L, PRGOPT, X, RNORM, MODE, IWORK, &
-                IWORK(L1), work(1), H, SCALE, Z, TEMP, D)
-    RETURN
-  END SUBROUTINE WNNLS
+  CALL WNLSM(W, MDW, ME, MA, N, L, PRGOPT, X, RNORM, MODE, IWORK, IWORK(L1), WORK(1), &
+             WORK(L1), WORK(L2), WORK(L3), WORK(L4),WORK(L5))
+  RETURN
+END subroutine wnnls

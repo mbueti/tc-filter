@@ -1,11 +1,11 @@
 SUBROUTINE maxth(dumu,dumv,dxc,dyc,rmxlim,tw)
   IMPLICIT NONE
 
-  integer, parameter :: nmx=64,lgth=60,iimx=110
+  integer, parameter :: lgth=60,iimx=110
   real, intent(inout) :: dxc, dyc, rmxlim
   real, dimension(imx,jmx), intent(in) :: dumu, dumv
   real, dimension(imx,jmx), intent(inout) :: tw
-  real :: xv, yv, alim, ddel, dtha, deltar, dx, dy, fact, factr,hmax, pi, pi180, rbd, rfavg, rfind, rmxavg, tanp, rxx, theta, &
+  real :: xv, yv, alim, ddel, dtha, deltar, dx, dy, fact, factr, hmax, rbd, rfavg, rfind, rmxavg, tanp, rxx, theta, &
           xcorn, ycorn, xold, yold, rmxpos, rtan, xcen,xcn, xctest, ycen, ycn, yctest, yyo
   integer :: i, iend, if, iflag, im, ipos, ir, ist, ix, iy, ixc,iyc, ixc1, iyc1, j, jend, jst, npts
   real, dimension(imx,jmx) :: del, tha, xf, ds, tang, th, tanmx
@@ -31,6 +31,9 @@ SUBROUTINE maxth(dumu,dumv,dxc,dyc,rmxlim,tw)
   iend=ixc+3
   jend=iyc+3
   npts=7
+  print *, 'xold, yold', xold, yold
+  print *, 'xcorn, ycorn', xcorn, ycorn
+  print *, 'ixc, iyc', ixc, iyc
   print*,'ist,iend',ist,jst,iend,jend
 !
 !  compute radial profile of azimuthal avg. tang. wind at each pt

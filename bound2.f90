@@ -2,9 +2,8 @@ subroutine bound2(u,v,tanuv,r0,xc,yc,yyo)
   IMPLICIT NONE
 
   integer :: ix, iy, ix1, iy1, i, j
-  real :: dx, dy, theta, p, q, pi, pi180
+  real :: dx, dy, theta, p, q
   real ::  fact, x, y, arad, ddel, dtha, r
-  integer, PARAMETER :: nmx=64
   real, intent(out) :: tanuv
   real, intent(in) :: r0, xc, yc, yyo
   REAL, DIMENSION(imx, jmx), intent(in) :: u,v

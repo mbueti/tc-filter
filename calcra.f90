@@ -1,57 +1,51 @@
-  SUBROUTINE CALCRa(RZR,RTAN,iang)
-    IMPLICIT NONE
+SUBROUTINE CALCRa(RO,RTAN,iang,dist)
+  implicit none
 
-    REAL, INTENT(inout) :: RTAN
-    REAL, INTENT(in) :: RZR
-    INTEGER, INTENT(in) :: iang
-    REAL FACT,DX,DY,XC,YC,X,Y,THETA,P,Q,XV,YV,XOLD,YOLD,XCORN,YCORN,XF,THA,DEL,TANG,DS,DDEL,DTHA,FACTR,DMMM
-    INTEGER IX,IY,IX1,IY1,id1,id2
-    
-    COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX),DEL(IMX,JMX),THA(IMX,JMX),XF(IMX,JMX),DS(IMX,JMX)
-!
-    COMMON  /TOTAL/ DDEL,DTHA
-    COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,id1,id2
-!
-    FACT =  COS(YOLD)
-!
-    ! print *, 'nmx=',nmx
-    DX=DDEL/PI180
-    DY=DTHA/PI180
-    XC = (XOLD-XCORN)*DX
-    YC = (YOLD-YCORN)*DY
+  real, intent(in) :: ro, dist
+  integer, intent(in) :: iang
+  real, intent(out) :: rtan
 
-!      
-    THETA= 2.*PI*FLOAT(iang)/FLOAT(NMX)
-        ! X=RO*fact*COS(THETA)+XC
-    X=RZR*COS(THETA)+XC
-    Y=RZR*SIN(THETA)+YC
-    IX=CEILING(X/DX)+1
-    IY=CEILING(Y/DY)+1
-    ! IX=mod(FLOOR(X/DX),imx)
-    do while (IX.le.0) 
-      IX=IX+IMX
-    end do
+  integer :: id1, id2, ix, ix1, iy, iy1
+  real :: xv, yv, ddel, dtha, pi, pi180, fact, dx, dy, xc, yc, theta, x, dmmm, tang, del, tha, xf, ds, xold, yold, &
+         xcorn, ycorn, factr, p, q, x1, y, y1
+       COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX), DEL(IMX,JMX),THA(IMX,JMX),XF(IMX,JMX),DS(IMX,JMX)
+!
+       COMMON  /TOTAL/ DDEL,DTHA
+       COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,id1,id2
+!
+          PI = 4.*ATAN(1.0)
+       PI180 = 4.*ATAN(1.0)/180.
+       FACT =  COS(YOLD)
+!
+       DX=DDEL/PI180
+       DY=DTHA/PI180
+       XC = (XOLD-XCORN)*DX
+       YC = (YOLD-YCORN)*DY
 
-    if (IX.gt.IMX) then
-      IX=MOD(IX,IMX)+1
-    end if
-    ! IY=mod(FLOOR(Y/DY),jmx)
-    do while (IY.le.0) 
-      IY=IY+JMX
-    end do
-    if(IY.gt.JMX) then
-      IY=MOD(IY,JMX)+1
-    end if
-    IX1=mod(IX+1,imx)
-    if (IX1.eq.0) IX1=imx
-    IY1=mod(IY+1,jmx)
-    if (IY1.eq.0) IY1=jmx
-    P=X/DX-FLOAT(IX)
-    Q=Y/DY-FLOAT(IY)
-!        rtan=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,MODULO(IY+1, IY))
-!      1      +  (1.-Q)*P*XF(max(MODULO(IX+1, IX),1),IY) +
-!      1      P*Q*XF(max(MODULO(IX+1,IX),1),max(MODULO(IY+1,IY),1))
-      !   print *, XF(max(MODULO(IX+1,IX),1),max(MODULO(IY+1,IY),1))
-    rtan=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY1) +  (1.-Q)*P*XF(IX1,IY)+P*Q*XF(IX1,IY1)
-    RETURN
-  END SUBROUTINE CALCRa
+!
+        THETA= 2.*PI*FLOAT(iang-1)/FLOAT(NMX)
+        X=RO*COS(THETA)+XC
+!        print *, cos(theta)
+!        print *, 'x=', x, ' ro=', ro, ' xc=', xc, ' theta=', theta
+        x = max(mod(x, 361.0),1.0)
+        if (NINT(X).gt.360) X = X - 360
+        if (NINT(X).le.0) X = X + 360
+        Y=RO*SIN(THETA)+YC
+        X1=X+DX
+        x1 = max(mod(x1, 361.0),1.0)
+        if (NINT(X1).gt.360) X1 = X1 - 360
+        if (NINT(X1).le.0) X1 = X1 + 360
+        Y1=Y+DY
+        IX=nint(X/DX)
+        IY=nint(Y/DY)
+        IX1=NINT(X1/dx)
+        IY1=nint(Y1/dy)
+        P=X/DX-FLOAT(IX)
+        Q=Y/DY-FLOAT(IY)
+!        print *, 'ix=', ix, ' iy=', iy
+       rtan=(1.-P)*(1.-Q)*XF(IX,IY) +(1.-P)*Q*XF(IX,IY1) + (1.-Q)*P*XF(IX1,IY) + P*Q*XF(IX1,IY1)
+10     CONTINUE
+!
+!
+         RETURN
+         END

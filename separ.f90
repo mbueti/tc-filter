@@ -3,12 +3,11 @@ SUBROUTINE SEPAR(XD)
 !  SEPERATES A FIELD INTO HURRICANE COMPONENT AND REMAINDER
 !
   implicit NONE
-  integer, PARAMETER :: NMX=64,nmx1=nmx+1,nmx2=nmx*2,nmx6=nmx*6
-  integer, PARAMETER :: IMX=360 , JMX=180
+  integer, PARAMETER :: nmx1=nmx+1,nmx2=nmx*2,nmx6=nmx*6
   real, dimension(imx, jmx), intent(inout) :: xd
   integer :: ix, iy, i, ie, ienv, im, ip, is, j, je, js, jy, jp,n1, n2, nnn, md
   real :: xv, yv, xold, yold, xcorn, ycorn, capd2, ddel, dtha,delth, delx, dely, dr, dpij, ro, romax, temp, x, y,dx, dy, fact, &
-          factr, pi, pi180, theta, xc, yc, xro,rb, rnm
+          factr, theta, xc, yc, xro,rb, rnm
   real, dimension(nmx) :: xr
   real, dimension(nmx,nmx) :: a
   real, dimension(nmx,nmx1) :: ab
@@ -144,8 +143,8 @@ SUBROUTINE SEPAR(XD)
 !
 !  solve system using constrained least squares method
 !
-        !      call wnnls(ab,nmx,0,nmx,nmx,0,[1.],w,rnm,md,iwrk,wrk)
-!
+      call wnnls(ab,nmx,0,nmx,nmx,0,[1.],w,rnm,md,iwrk,wrk)
+            
       temp=0.
       DO ip=1,nmx
         temp=temp +w(ip)*xr(ip)
