@@ -3,7 +3,6 @@ subroutine findra(dxc,dyc,yc,rmxavg,rfind,tanuv)
   
 !  finds rfind from azimuthally averaged radial profile of tang. wind
 
-  integer, parameter :: iimx=110
   integer :: irad
   real :: dist, dr, r, rtan, rtan1, rtan2, x1
   real, intent(in) :: rmxavg, dxc, dyc, yc

@@ -7,7 +7,7 @@
 
       INTEGER :: UNCID, VNCID, STATUS, UVARID, VVARID, LATVARID, LONVARID, TIMEVARID, NLON, NLAT, NTIME, TRACKREAD, &
                  TCDATE, TCHOUR, STORMDAYS, STORMHOUR, STORMMIN, TRACKYEAR, TRACKMONTH, TRACKDAY, TRACKHOUR, TRACKMIN, I, &
-                 ITC, T, NTC, m, tcdum1, tcdum2, tcdum3, tcdum4, rcls, kmax, lgi, iimx, IBLKMX, JBLKMX, dftx, dfty, iang, &
+                 ITC, T, NTC, m, tcdum1, tcdum2, tcdum3, tcdum4, rcls, IBLKMX, JBLKMX, dftx, dfty, iang, &
                  icx, icy, ie, ienv, ifl, ihx, ihy, imax, iimax, irdex, iw, ix, iy, j, jj, jmax, jjmax, jn, js, ngd, ngr, nn1, &
                  nn2, nn3, nn4, nnn, NSTFLG, NTCID, ntr
       REAL :: LONC, LATC, rscale, xold, yold, xv, yv, xcorn, ycorn, xcg, ycg, xcp, ycp, xc, yc, rzr, rzrn, ddel, dtha, dist, &
@@ -32,7 +32,6 @@
       REAL, DIMENSION(2) :: DTIMES
       real :: sixhours
 
-      PARAMETER (KMAX=18,LGI=20 ,iimx=100)
       PARAMETER (IBLKMX=LGI*IMX+4*KMAX*IMX)
       PARAMETER (JBLKMX=IMX+14*KMAX*IMX)
 !

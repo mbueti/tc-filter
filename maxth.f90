@@ -1,7 +1,7 @@
 SUBROUTINE maxth(dumu,dumv,dxc,dyc,rmxlim,tw)
   IMPLICIT NONE
 
-  integer, parameter :: lgth=60,iimx=110
+  integer, parameter :: lgth=60
   real, intent(inout) :: dxc, dyc, rmxlim
   real, dimension(imx,jmx), intent(in) :: dumu, dumv
   real, dimension(imx,jmx), intent(inout) :: tw

@@ -3,7 +3,6 @@ SUBROUTINE calct(deltar,xc,yc,yo,xf,rmxlim)
   
 !  calculates the radial profile for eight azimuthal angles
 
-  integer, PARAMETER :: iimx=100
   real, intent(in) :: deltar, xc, yc, yo
   real, intent(out) :: rmxlim
   real :: xv, yv, arad, bfact, ddel, dtha,ro, theta, x, x1, y, y1, p, q, dx, dy, xcorn, ycorn, xold, yold,rmxavg, rfind, rdistl, &

@@ -1,7 +1,7 @@
 SUBROUTINE CENTER(UP,VP,DELG,THAG)
   IMPLICIT NONE
   
-   integer, PARAMETER :: LGI=20, IGL=500
+   integer, PARAMETER :: IGL=500
    real, dimension(imx,jmx), intent(in) :: up, vp
    real, intent(inout) :: delg, thag
    integer :: dftx, dfty, ntr, nstflg, nn1, nn2, nn3, nn4,i, ib, ie, j, jb, je, iw, ix, iy, jjmax, ngd,ngr, jmax, itot, IRANG, ii, &
