@@ -1,7 +1,6 @@
 SUBROUTINE calcr(RO,RTAN,xc,yc,yold,u,v)
   implicit NONE
 
-  integer, PARAMETER :: nmx=64
   integer :: ix, iy, ix1, iy1, i
   real :: ddel, dtha, pi, pi180, fact, dx, dy, theta, x, y, x1, y1, p, q
   real, DIMENSION(nmx) :: XR(NMX)
