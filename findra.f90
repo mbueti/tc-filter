@@ -9,7 +9,7 @@ subroutine findra(dxc,dyc,yc,rmxavg,rfind,tanuv)
   real, dimension(iimx), intent(in) :: tanuv
   real, intent(out) :: rfind
 
-  DR=1.0
+  DR=180.0/320.0
 
   dist= rmxavg*1.5
   X1 = 0.0

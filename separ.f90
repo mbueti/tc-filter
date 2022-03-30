@@ -58,10 +58,14 @@ SUBROUTINE SEPAR(XD)
 !
   dx=ddel/pi180
   DY=DTHA/PI180
+  print *, 'dx=', dx
+  print *, 'ro=', ro
+  print *, 'xold=', xold
+  print *, 'yold=', yold
 !
 !
-  XC = (XOLD-XCORN)*DX
-  YC = (YOLD-YCORN)*DY
+  XC = (XOLD-XCORN)
+  YC = (YOLD-YCORN)
   IS=NINT((XC-RO/fact)/DX) +1.
   IE=NINT((XC+RO/fact)/DX + 1.)
   JS=NINT((YC-RO)/DY) +1.
@@ -94,13 +98,12 @@ SUBROUTINE SEPAR(XD)
   w=0.
   romax=ro
 !
-  IF (ie.gt.imx.or.je.gt.jmx.or.is.lt.1.or.js.lt.1) THEN
-    print *, 'ro=',ro
-    print *, 'fact=',fact
-    print *, 'xold=', xold, 'yold=', yold
-    print *, 'xc=', xc, 'yc=', yc
-    print *, 'js=', JS, ' je=', JE
-  END IF
+  print *, 'xc=', xc, 'yc=', yc
+  print *, 'xcorn=', xcorn, 'ycorn=', ycorn
+  print *, 'xold=', xold, 'yold=', yold
+  print *, 'dx=', dx, 'dy=', dy
+  print *, 'is=', is, 'ie=', ie
+  print *, 'js=', js, 'je=', je
   DO 10 IX=IS,IE
     DO 11 JY=JS,JE
       ro=romax

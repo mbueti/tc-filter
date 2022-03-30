@@ -99,12 +99,13 @@ SUBROUTINE maxth(dumu,dumv,dxc,dyc,rmxlim,tw)
   iyc=int(ycn)+1
   ixc = modulo(ixc-1, imx)+1
   ixc1 = modulo(ixc, imx)+1
+  print *, 'ipos=', ipos
   print *, 'xcn=', xcn
   print *, 'ycn=', ycn
   xctest=(xcn+xcorn)*pi180
   yctest=(ycn+ycorn)*pi180
-  print *, 'xctext=', xctest/pi180
-  print *, 'yctext=', yctest/pi180
+  print *, 'xctest=', xctest/pi180
+  print *, 'yctest=', yctest/pi180
 !
 !  recompute the tangential wind component based on new center
 !

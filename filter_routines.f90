@@ -1,6 +1,6 @@
 MODULE filter_routines
-  INTEGER, PARAMETER :: IMX=360, JMX=180, nmx=64, &
-                        KMAX=18, LGI=20, iimx=110
+  INTEGER, PARAMETER :: IMX=640, JMX=320, nmx=64, &
+                        KMAX=18, LGI=20, iimx=360
   REAL, PARAMETER :: PI=4.*ATAN(1.0), PI180=PI/180.0
 
   CONTAINS

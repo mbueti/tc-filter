@@ -19,8 +19,8 @@ SUBROUTINE CALCRa(RO,RTAN,iang,dist)
 !
        DX=DDEL/PI180
        DY=DTHA/PI180
-       XC = (XOLD-XCORN)*DX
-       YC = (YOLD-YCORN)*DY
+       XC = (XOLD-XCORN)
+       YC = (YOLD-YCORN)
 
 !
         THETA= 2.*PI*FLOAT(iang-1)/FLOAT(NMX)

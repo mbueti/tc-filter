@@ -24,16 +24,6 @@ SUBROUTINE BOUND(NMX,XR,ro)
     IX1 = MODULO(IX1-1,imx) +1
     P=X/DX-FLOAT(IX)
     Q=Y/DY-FLOAT(IY)
-    print *, 'pi=',pi
-    print *, 'fact=',fact
-    print *, 'theta=',theta
-    print *, 'ro=',RO(i)
-    print *, 'Y=',Y
-    print *, 'YC=',YC
-    print *, 'YOLD=',YOLD
-    print *, 'IY=', IY
-    print *, 'IY1=', IY1
-    print *, 'sin=', sin(theta)
     XR(I)=(1.-P)*(1.-Q)*XF(IX,IY)+(1.-P)*Q*XF(IX,IY1)+(1.-Q)*P*XF(IX1,IY)+P*Q*XF(IX1,IY1)
   END DO
   RETURN
