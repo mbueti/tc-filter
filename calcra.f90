@@ -6,15 +6,13 @@ SUBROUTINE CALCRa(RO,RTAN,iang,dist)
   real, intent(out) :: rtan
 
   integer :: id1, id2, ix, ix1, iy, iy1
-  real :: xv, yv, ddel, dtha, pi, pi180, fact, dx, dy, xc, yc, theta, x, dmmm, tang, del, tha, xf, ds, xold, yold, &
+  real :: xv, yv, ddel, dtha, fact, dx, dy, xc, yc, theta, x, dmmm, tang, del, tha, xf, ds, xold, yold, &
          xcorn, ycorn, factr, p, q, x1, y, y1
        COMMON /WINDS/ DMMM(IMX,JMX,2),TANG(IMX,JMX), DEL(IMX,JMX),THA(IMX,JMX),XF(IMX,JMX),DS(IMX,JMX)
 !
        COMMON  /TOTAL/ DDEL,DTHA
        COMMON  /COOR/ XV,YV,XOLD,YOLD,XCORN,YCORN,FACTR,id1,id2
 !
-          PI = 4.*ATAN(1.0)
-       PI180 = 4.*ATAN(1.0)/180.
        FACT =  COS(YOLD)
 !
        DX=DDEL/PI180
@@ -36,10 +34,14 @@ SUBROUTINE CALCRa(RO,RTAN,iang,dist)
         if (NINT(X1).gt.360) X1 = X1 - 360
         if (NINT(X1).le.0) X1 = X1 + 360
         Y1=Y+DY
-        IX=nint(X/DX)
-        IY=nint(Y/DY)
-        IX1=NINT(X1/dx)
-        IY1=nint(Y1/dy)
+        IX=NINT(X/DX)
+        IY=NINT(Y/DY)
+        IX1=NINT(X1/DX)
+        IY1=NINT(Y1/DY)
+        IX = MODULO(IX-1,imx) +1
+        IX1 = MODULO(IX1-1,imx) +1
+        IY = MAX(IY,1)
+        IY1 = MAX(IY1,1)
         P=X/DX-FLOAT(IX)
         Q=Y/DY-FLOAT(IY)
 !        print *, 'ix=', ix, ' iy=', iy

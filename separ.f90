@@ -45,7 +45,7 @@ SUBROUTINE SEPAR(XD)
   ro=amin1(ro, 30.0)
 !        print*,'rovect=',rovect
 !        print*,'ro=',ro,capd2,a(1,1),a(2,1)
-!        ro = ro*1.5
+  ro = ro*1.75
   FACT =  COS(YOLD*PI180)
 !
 !   XC IS THE I POSITION OF THE CENTER OF THE OLD VORTEX
@@ -58,18 +58,13 @@ SUBROUTINE SEPAR(XD)
 !
   dx=ddel/pi180
   DY=DTHA/PI180
-  print *, 'dx=', dx
-  print *, 'ro=', ro
-  print *, 'xold=', xold
-  print *, 'yold=', yold
-!
 !
   XC = (XOLD-XCORN)
   YC = (YOLD-YCORN)
-  IS=NINT((XC-RO/fact)/DX) +1.
-  IE=NINT((XC+RO/fact)/DX + 1.)
-  JS=NINT((YC-RO)/DY) +1.
-  JE=NINT((YC+RO)/DY + 1.)
+  IS = NINT((XC-RO/fact)/DX) +1.
+  IE = NINT((XC+RO/fact)/DX + 1.)
+  JS = NINT((YC-RO)/DY) +1.
+  JE = NINT((YC+RO)/DY + 1.)
 !
   DO J = 1 , JMX
     DO I = 1 , IMX
@@ -98,12 +93,6 @@ SUBROUTINE SEPAR(XD)
   w=0.
   romax=ro
 !
-  print *, 'xc=', xc, 'yc=', yc
-  print *, 'xcorn=', xcorn, 'ycorn=', ycorn
-  print *, 'xold=', xold, 'yold=', yold
-  print *, 'dx=', dx, 'dy=', dy
-  print *, 'is=', is, 'ie=', ie
-  print *, 'js=', js, 'je=', je
   DO 10 IX=IS,IE
     DO 11 JY=JS,JE
       ro=romax

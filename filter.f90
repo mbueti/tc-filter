@@ -633,7 +633,7 @@
             RNOT(iang) =  R/.1
           ENDIF
 !
-           rscale = 2.0 - tanh(exp(1.0)*(rcls+100)/1000)
+           rscale = 6-5*tanh(exp(1.0)*(rcls+200)/1200)
            RZR = rscale*float(rcls)/111.19393
 !          rzr=dist
           m = 1
@@ -657,6 +657,7 @@
           IF (RTAN.GT.0.0) GO TO 1999
 6666      CONTINUE
 !
+        !   RZR = RZR*1.5
           RZRN = RZR
           RZR = RZR*111.19493
 !

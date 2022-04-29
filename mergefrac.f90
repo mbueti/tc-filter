@@ -12,10 +12,11 @@ REAL FUNCTION mergefrac(lon,lat,i,j,rcls,xc,yc)
   dx = dlon*111.19393
   dy = dlat*111.19393
   dr = SQRT(dx**2+dy**2)
-  IF (dr.GE.(0.5*rcls)) THEN
-    mergefrac = MIN(dr/(10.0*rcls), 1.0)
-    mergefrac = MIN(1.0-(5.0*rcls-dr)/(5.0*rcls), 1.0)
-  ELSE
-    mergefrac = 1.0
-  END IF
+  ! IF (dr.GE.(0.75*rcls)) THEN
+    ! mergefrac = MIN(dr/(10.0*rcls), 1.0)
+  mergefrac = MAX(MIN(1-(2.5*rcls-dr)/(rcls), 1.0), 0.0)**0.25
+  ! mergefrac = MAX(MIN(1.0-(1.1*rcls-dr)/(1.1*rcls), 1.0), 0.0)
+  ! ELSE
+  !   mergefrac = 1.0
+  ! END IF
 END FUNCTION mergefrac
